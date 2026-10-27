@@ -346,6 +346,7 @@ func cmdSim(args []string, stdout, stderr io.Writer) int {
 	ticks := fs.Int("ticks", 10, "number of ticks")
 	strat := fs.String("strategy", "lo", "lo, li, ri or ro")
 	out := fs.String("out", "", "write the scheduler log to this file")
+	workers := fs.Int("workers", 1, "reduce entities on this many workers each tick; the log is identical for any value (0 means one per processor)")
 	root := fs.String("root", "W,K,C,S", "permissions at the root chain")
 	absorb := fs.String("absorb", "s", "absorption mode: off, any, nf, s (game-host default) or u")
 	sc := fs.String("sc", "settled", "scope-constructor mode: settled (game-host default), safe or any (research modes)")
@@ -394,7 +395,13 @@ func cmdSim(args []string, stdout, stderr io.Writer) int {
 	}
 	for i := 0; i < *ticks; i++ {
 		before := len(w.Log().Events)
-		if err := w.Tick(); err != nil {
+		var err error
+		if *workers == 1 {
+			err = w.Tick()
+		} else {
+			err = w.TickParallel(*workers)
+		}
+		if err != nil {
 			fmt.Fprintf(stderr, "spherepop sim: %v\n", err)
 			return exitFailure
 		}

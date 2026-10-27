@@ -70,3 +70,10 @@ func (c *Config) Apply(t *term.Term, p term.Path, id RuleID) (*term.Term, error)
 	}
 	return t.Replace(p, r)
 }
+
+// EffectivePerm returns the permission in force at path p of t: the root
+// permission narrowed by every bracket label on the way down.
+func (c *Config) EffectivePerm(t *term.Term, p term.Path) (PermSet, error) {
+	m, _, err := c.maskAt(t, p)
+	return m, err
+}

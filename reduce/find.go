@@ -57,10 +57,10 @@ type session struct {
 	quiet    map[nkey]struct{} // subterms with no redex of any kind
 	rnormal  map[nkey]bool
 	settled  map[nkey]bool
-	insens   map[term.Digest]bool
 	strategy Strategy
 	count    int
 	visit    func(Redex) bool
+	path     []byte // the position being visited, one step character per level
 }
 
 func newSession(c *Config) *session {
@@ -69,8 +69,17 @@ func newSession(c *Config) *session {
 		quiet:   map[nkey]struct{}{},
 		rnormal: map[nkey]bool{},
 		settled: map[nkey]bool{},
-		insens:  map[term.Digest]bool{},
 	}
+}
+
+// contractFlags returns the structural flags of the constants that head a
+// contraction admissible under mask. I and B are never gated. A gated
+// constant counts only if its bit is in mask, an ungated one always counts.
+// Entering a bracket only narrows the mask, so a subterm with none of these
+// flags has no contraction anywhere inside it at mask or at any narrower one.
+func (s *session) contractFlags(mask PermSet) uint8 {
+	gated := s.cfg.Gated & PermAll
+	return uint8(PermAll&^gated) | uint8(mask&gated) | term.FlagI | term.FlagB
 }
 
 // contractionAt reports the contraction redex rooted at n, if any.
@@ -113,6 +122,9 @@ func (s *session) redexAt(n *term.Term, mask PermSet) (RuleID, bool) {
 // isRNormal reports that v has no permitted contraction at the chain whose
 // effective permission is mask. Boundary rules are not part of R.
 func (s *session) isRNormal(v *term.Term, mask PermSet) bool {
+	if v.Flags()&s.contractFlags(mask) == 0 {
+		return true // no admissible contraction head anywhere in v
+	}
 	k := nkey{v.Digest(), mask}
 	if r, ok := s.rnormal[k]; ok {
 		return r
@@ -136,6 +148,11 @@ func (s *session) isRNormal(v *term.Term, mask PermSet) bool {
 // application whose function child is a bracket or a scope constructor. The
 // scope clause is a deliberately conservative reading, see SPEC.md.
 func (s *session) isSettled(v *term.Term, mask PermSet) bool {
+	if v.Flags()&(term.FlagBracket|term.FlagScope) == 0 {
+		// No bracket or scope constructor, so no pending boundary step can
+		// exist and settled means R-normal.
+		return s.isRNormal(v, mask)
+	}
 	k := nkey{v.Digest(), mask}
 	if r, ok := s.settled[k]; ok {
 		return r
@@ -157,24 +174,11 @@ func (s *session) isSettled(v *term.Term, mask PermSet) bool {
 	return r
 }
 
-// isInsensitive reports that v contains no gated constant.
+// isInsensitive reports that v contains no gated constant. The structural
+// flags record which of W, K, C and S occur, in the bits of the permission
+// alphabet, so this is one bitwise test.
 func (s *session) isInsensitive(v *term.Term) bool {
-	if r, ok := s.insens[v.Digest()]; ok {
-		return r
-	}
-	r := true
-	switch v.Kind() {
-	case term.KindConst:
-		if bit, ok := permBit(v.Name()); ok && s.cfg.Gated&bit != 0 {
-			r = false
-		}
-	case term.KindApp:
-		r = s.isInsensitive(v.Fun()) && s.isInsensitive(v.Arg())
-	case term.KindBracket:
-		r = s.isInsensitive(v.Body())
-	}
-	s.insens[v.Digest()] = r
-	return r
+	return v.Flags()&uint8(s.cfg.Gated&PermAll) == 0
 }
 
 // absorbs evaluates the side condition of Abs for argument v at the chain
@@ -214,9 +218,25 @@ func (c *Config) Safe(v *term.Term, mask PermSet) bool {
 	return s.isRNormal(v, mask) && (s.isSettled(v, mask) || s.isInsensitive(v))
 }
 
+// noRedex reports that t cannot contain any step at mask, from its flags
+// alone. A contraction needs an admissible constant, Sc needs a scope
+// constructor, and Abs needs a bracket and is available only when absorption
+// is not off.
+func (s *session) noRedex(t *term.Term, mask PermSet) bool {
+	possible := s.contractFlags(mask) | term.FlagScope
+	if s.cfg.Absorb != AbsOff {
+		possible |= term.FlagBracket
+	}
+	return t.Flags()&possible == 0
+}
+
 // walk visits redexes of t in the strategy's order and reports whether the
-// visitor asked to stop.
-func (s *session) walk(t *term.Term, mask PermSet, path term.Path) bool {
+// visitor asked to stop. The position is kept in s.path and a Path string is
+// made only when a redex is reported.
+func (s *session) walk(t *term.Term, mask PermSet) bool {
+	if s.noRedex(t, mask) {
+		return false
+	}
 	k := nkey{t.Digest(), mask}
 	if _, ok := s.quiet[k]; ok {
 		return false
@@ -226,9 +246,9 @@ func (s *session) walk(t *term.Term, mask PermSet, path term.Path) bool {
 	outer := s.strategy == LeftmostOutermost || s.strategy == RightmostOutermost
 	rightFirst := s.strategy == RightmostOutermost || s.strategy == RightmostInnermost
 	if outer {
-		stop = s.here(t, mask, path) || s.kids(t, mask, path, rightFirst)
+		stop = s.here(t, mask) || s.kids(t, mask, rightFirst)
 	} else {
-		stop = s.kids(t, mask, path, rightFirst) || s.here(t, mask, path)
+		stop = s.kids(t, mask, rightFirst) || s.here(t, mask)
 	}
 	if !stop && s.count == before {
 		s.quiet[k] = struct{}{}
@@ -236,26 +256,31 @@ func (s *session) walk(t *term.Term, mask PermSet, path term.Path) bool {
 	return stop
 }
 
-func (s *session) here(t *term.Term, mask PermSet, path term.Path) bool {
+func (s *session) here(t *term.Term, mask PermSet) bool {
 	id, ok := s.redexAt(t, mask)
 	if !ok {
 		return false
 	}
 	s.count++
-	return s.visit(Redex{Path: path, Rule: id})
+	return s.visit(Redex{Path: term.Path(s.path), Rule: id})
 }
 
-func (s *session) kids(t *term.Term, mask PermSet, path term.Path, rightFirst bool) bool {
+func (s *session) down(step byte, t *term.Term, mask PermSet) bool {
+	s.path = append(s.path, step)
+	stop := s.walk(t, mask)
+	s.path = s.path[:len(s.path)-1]
+	return stop
+}
+
+func (s *session) kids(t *term.Term, mask PermSet, rightFirst bool) bool {
 	switch t.Kind() {
 	case term.KindApp:
-		l := func() bool { return s.walk(t.Fun(), mask, path.Down(term.StepFun)) }
-		r := func() bool { return s.walk(t.Arg(), mask, path.Down(term.StepArg)) }
 		if rightFirst {
-			return r() || l()
+			return s.down(term.StepArg, t.Arg(), mask) || s.down(term.StepFun, t.Fun(), mask)
 		}
-		return l() || r()
+		return s.down(term.StepFun, t.Fun(), mask) || s.down(term.StepArg, t.Arg(), mask)
 	case term.KindBracket:
-		return s.walk(t.Body(), mask&s.cfg.perm(t.Label()), path.Down(term.StepBody))
+		return s.down(term.StepBody, t.Body(), mask&s.cfg.perm(t.Label()))
 	}
 	return false
 }
@@ -267,6 +292,6 @@ func (c *Config) Redexes(t *term.Term, strat Strategy) []Redex {
 	s.strategy = strat
 	var out []Redex
 	s.visit = func(r Redex) bool { out = append(out, r); return false }
-	s.walk(t, c.Root, "")
+	s.walk(t, c.Root)
 	return out
 }

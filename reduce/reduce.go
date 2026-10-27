@@ -64,7 +64,7 @@ func (c *Config) ReduceUntil(t *term.Term, strat Strategy, fuel uint64, stop fun
 		var next Redex
 		var found bool
 		s.visit = func(r Redex) bool { next, found = r, true; return true }
-		s.walk(res.Term, c.Root, "")
+		s.walk(res.Term, c.Root)
 		if !found {
 			return res, nil
 		}

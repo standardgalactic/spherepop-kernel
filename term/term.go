@@ -9,7 +9,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"hash"
 	"math"
 	"sort"
 )
@@ -71,6 +70,7 @@ const domain = "spherepop-term/1"
 // digests are equal. The zero value and a nil pointer are not valid terms.
 type Term struct {
 	kind   Kind
+	flags  uint8  // union of the Flag values of every node in the term
 	name   string // atom or constant name, or the label of a scope or bracket
 	left   *Term  // function child of an application, or body of a bracket
 	right  *Term  // argument child of an application
@@ -79,6 +79,43 @@ type Term struct {
 	leaves int // number of leaves, saturating
 }
 
+// Structural flags, cached on every term when it is built. The flags of a term
+// are the union of the flags of its nodes. They are derived from structure
+// only, take no part in the digest, and let a caller rule out whole subterms
+// with one bitwise test. The first four bits are the permission alphabet in
+// the order of reduce.PermW, PermK, PermC and PermS.
+const (
+	FlagW       uint8 = 1 << 0 // a constant named W occurs
+	FlagK       uint8 = 1 << 1 // a constant named K occurs
+	FlagC       uint8 = 1 << 2 // a constant named C occurs
+	FlagS       uint8 = 1 << 3 // a constant named S occurs
+	FlagI       uint8 = 1 << 4 // a constant named I occurs
+	FlagB       uint8 = 1 << 5 // a constant named B occurs
+	FlagBracket uint8 = 1 << 6 // a bracket occurs
+	FlagScope   uint8 = 1 << 7 // a scope constructor occurs
+)
+
+func constFlag(name string) uint8 {
+	switch name {
+	case "W":
+		return FlagW
+	case "K":
+		return FlagK
+	case "C":
+		return FlagC
+	case "S":
+		return FlagS
+	case "I":
+		return FlagI
+	case "B":
+		return FlagB
+	}
+	return 0
+}
+
+// Flags returns the structural flags of t.
+func (t *Term) Flags() uint8 { return t.flags }
+
 func satAdd(a, b int) int {
 	if a > math.MaxInt-b {
 		return math.MaxInt
@@ -86,20 +123,32 @@ func satAdd(a, b int) int {
 	return a + b
 }
 
-func writeString(h hash.Hash, s string) {
-	var buf [binary.MaxVarintLen64]byte
-	n := binary.PutUvarint(buf[:], uint64(len(s)))
-	h.Write(buf[:n])
-	h.Write([]byte(s))
+// appendString appends the length-prefixed form of s used inside digests: an
+// unsigned varint length, then the bytes.
+func appendString(b []byte, s string) []byte {
+	b = binary.AppendUvarint(b, uint64(len(s)))
+	return append(b, s...)
+}
+
+// appendHeader appends the start of every hashed frame: the domain string and
+// the kind byte.
+func appendHeader(b []byte, k Kind) []byte {
+	b = appendString(b, domain)
+	return append(b, byte(k))
 }
 
 func leaf(kind Kind, name string) *Term {
-	h := sha256.New()
-	writeString(h, domain)
-	h.Write([]byte{byte(kind)})
-	writeString(h, name)
 	t := &Term{kind: kind, name: name, leaves: 1}
-	h.Sum(t.digest[:0])
+	switch kind {
+	case KindConst:
+		t.flags = constFlag(name)
+	case KindScope:
+		t.flags = FlagScope
+	}
+	var arr [96]byte
+	b := appendHeader(arr[:0], kind)
+	b = appendString(b, name)
+	t.digest = sha256.Sum256(b)
 	return t
 }
 
@@ -115,19 +164,21 @@ func Scope(label string) *Term { return leaf(KindScope, label) }
 
 // App returns the application circle f x.
 func App(f, x *Term) *Term {
-	h := sha256.New()
-	writeString(h, domain)
-	h.Write([]byte{byte(KindApp)})
-	h.Write(f.digest[:])
-	h.Write(x.digest[:])
 	t := &Term{
 		kind:   KindApp,
+		flags:  f.flags | x.flags,
 		left:   f,
 		right:  x,
 		size:   satAdd(satAdd(f.size, x.size), 1),
 		leaves: satAdd(f.leaves, x.leaves),
 	}
-	h.Sum(t.digest[:0])
+	// The hashed frame of an application has a fixed length, so it is built
+	// in an array and hashed in one call without allocating.
+	var arr [128]byte
+	b := appendHeader(arr[:0], KindApp)
+	b = append(b, f.digest[:]...)
+	b = append(b, x.digest[:]...)
+	t.digest = sha256.Sum256(b)
 	return t
 }
 
@@ -141,19 +192,19 @@ func Apply(f *Term, args ...*Term) *Term {
 
 // Bracket returns the bracket <body>_label.
 func Bracket(label string, body *Term) *Term {
-	h := sha256.New()
-	writeString(h, domain)
-	h.Write([]byte{byte(KindBracket)})
-	writeString(h, label)
-	h.Write(body.digest[:])
 	t := &Term{
 		kind:   KindBracket,
+		flags:  body.flags | FlagBracket,
 		name:   label,
 		left:   body,
 		size:   body.size,
 		leaves: body.leaves,
 	}
-	h.Sum(t.digest[:0])
+	var arr [128]byte
+	b := appendHeader(arr[:0], KindBracket)
+	b = appendString(b, label)
+	b = append(b, body.digest[:]...)
+	t.digest = sha256.Sum256(b)
 	return t
 }
 

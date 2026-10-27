@@ -137,6 +137,26 @@ func TestSimAndCheckLog(t *testing.T) {
 	}
 }
 
+func TestSimWorkersDoNotChangeTheLog(t *testing.T) {
+	dir := t.TempDir()
+	args := func(workers, file string) []string {
+		return []string{"sim", "--entity", "a=S K K x", "--entity", "b=I (I (yield (K p q)))", "--entity", "c=W W W",
+			"--entity", "d=K a b", "--budget", "2", "--ticks", "6", "--workers", workers, "--out", file}
+	}
+	var logs []string
+	for _, w := range []string{"1", "3", "0"} {
+		f := filepath.Join(dir, "log"+w+".json")
+		if code, _, e := do(t, "", args(w, f)...); code != exitOK {
+			t.Fatalf("workers %s: exit %d: %s", w, code, e)
+		}
+		b, _ := os.ReadFile(f)
+		logs = append(logs, string(b))
+	}
+	if logs[0] != logs[1] || logs[0] != logs[2] {
+		t.Fatal("the scheduler log depends on the number of workers")
+	}
+}
+
 func TestCompile(t *testing.T) {
 	code, out, _ := do(t, "", "compile", `\x y. x`)
 	if code != exitOK || strings.TrimSpace(out) != "K" {

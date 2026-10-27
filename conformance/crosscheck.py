@@ -121,8 +121,9 @@ for n in range(sched_cases):
     for k in ents:  # close the parentheses opened by the prefixes
         ents[k] += ")" * (ents[k].count("(") - ents[k].count(")"))
     strat, budget, ticks = rng.choice(V.STRATEGIES), rng.choice([1, 2, 5]), rng.choice([3, 6])
+    workers = rng.choice([1, 2, 4, 0])  # 0 is one worker per processor
     args = [GO, "sim", "--strategy", strat, "--budget", str(budget), "--ticks", str(ticks),
-            "--out", os.path.join(tmp, "sg.json")] + [a for k, v in ents.items() for a in ("--entity", "%s=%s" % (k, v))]
+            "--workers", str(workers), "--out", os.path.join(tmp, "sg.json")] + [a for k, v in ents.items() for a in ("--entity", "%s=%s" % (k, v))]
     subprocess.run(args, capture_output=True, text=True)
     gdoc = json.load(open(os.path.join(tmp, "sg.json")))
     try:

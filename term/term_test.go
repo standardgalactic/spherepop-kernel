@@ -175,3 +175,45 @@ func TestNumeralAtoms(t *testing.T) {
 		t.Error("numeral digest differs from Atom(\"3\")")
 	}
 }
+
+func naiveFlags(t *Term) uint8 {
+	var f uint8
+	switch t.Kind() {
+	case KindConst:
+		f = constFlag(t.Name())
+	case KindScope:
+		f = FlagScope
+	case KindApp:
+		f = naiveFlags(t.Fun()) | naiveFlags(t.Arg())
+	case KindBracket:
+		f = naiveFlags(t.Body()) | FlagBracket
+	}
+	return f
+}
+
+// The structural flags are a pure function of structure, and they take no part
+// in the digest: two terms with the same shape and names have the same digest
+// whatever their flags, and the flags follow the shape.
+func TestFlagsFollowStructureAndDoNotChangeDigests(t *testing.T) {
+	cases := map[string]uint8{
+		"a":           0,
+		"K":           FlagK,
+		"K a (S b)":   FlagK | FlagS,
+		"<I>_x":       FlagI | FlagBracket,
+		"sc_x (B C)":  FlagScope | FlagB | FlagC,
+		"W W":         FlagW,
+		"<<a>_y>_x":   FlagBracket,
+		"z (K)":       FlagK,
+		"I B C K W S": FlagI | FlagB | FlagC | FlagK | FlagW | FlagS,
+	}
+	for src, want := range cases {
+		tm := MustParse(src)
+		if tm.Flags() != want || naiveFlags(tm) != want {
+			t.Errorf("%s: flags %08b, want %08b", src, tm.Flags(), want)
+		}
+	}
+	// a constant whose name merely contains a letter is not that combinator
+	if Const("KK").Flags() != 0 || Const("k").Flags() != 0 || Atom("K").Flags() != 0 {
+		t.Error("flags set for a name that is not exactly W, K, C, S, I or B, or for an atom")
+	}
+}

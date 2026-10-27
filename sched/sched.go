@@ -14,7 +14,10 @@ package sched
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"sort"
+	"sync"
+	"sync/atomic"
 
 	"github.com/standardgalactic/spherepop-kernel/reduce"
 	"github.com/standardgalactic/spherepop-kernel/term"
@@ -162,41 +165,139 @@ func (w *World) EventsFrom(i int) []Event {
 	return append([]Event(nil), w.log.Events[i:]...)
 }
 
+// turn is the plan for one entity in one tick. It is computed from the entity
+// without changing it, so a tick that fails changes nothing.
+type turn struct {
+	start   *term.Term // what the entity reduces from
+	rearm   *Rearm
+	resumed bool
+	skip    bool
+}
+
+// outcome is the result of running one turn.
+type outcome struct {
+	res reduce.Result
+	doc trace.Document
+	err error
+}
+
+func (w *World) plan(e *entity) turn {
+	var t turn
+	t.start = e.term
+	normal := e.normal
+	if e.pending != nil {
+		t.rearm = &Rearm{Term: e.pending.String(), Digest: e.pending.Digest().String(), Preempted: !e.normal}
+		t.start, normal = e.pending, false
+	} else if e.suspended {
+		t.start, _ = Continuation(e.term)
+		t.resumed = true
+		normal = false
+	}
+	t.skip = normal
+	return t
+}
+
+func (w *World) run(t turn) outcome {
+	res, doc, err := trace.RecordUntil(w.cfg, t.start, w.pol.Strategy, w.pol.Budget, atBoundary)
+	return outcome{res, doc, err}
+}
+
+// commit applies every planned turn and its outcome, in identifier order, and
+// advances the tick. Nothing is applied if any outcome is an error.
+func (w *World) commit(turns []turn, outs []outcome) error {
+	for i, t := range turns {
+		if !t.skip && outs[i].err != nil {
+			return fmt.Errorf("sched: entity %q: %w", w.ents[i].id, outs[i].err)
+		}
+	}
+	for i, t := range turns {
+		e := w.ents[i]
+		if t.skip {
+			w.log.Events = append(w.log.Events, Event{Tick: w.tick, Entity: e.id, Decision: Skip})
+			continue
+		}
+		o := outs[i]
+		doc := o.doc
+		w.log.Events = append(w.log.Events, Event{Tick: w.tick, Entity: e.id, Decision: Run, Budget: w.pol.Budget, Slice: &doc, Rearm: t.rearm, Resumed: t.resumed})
+		e.pending = nil
+		e.term, e.suspended = o.res.Term, o.res.Stopped
+		e.normal = !o.res.Exhausted && !o.res.Stopped
+	}
+	w.tick++
+	return nil
+}
+
 // Tick gives every entity one turn, in identifier order. An entity already in
 // normal form is skipped and spends nothing. Every other entity reduces for at
 // most the policy's budget from wherever it stopped, and whatever it has not
 // finished is carried to the next tick as its term.
-func (w *World) Tick() error {
-	for _, e := range w.ents {
-		var rearm *Rearm
-		resumed := false
-		if e.pending != nil {
-			rearm = &Rearm{Term: e.pending.String(), Digest: e.pending.Digest().String(), Preempted: !e.normal}
-			e.term, e.normal, e.suspended, e.pending = e.pending, false, false, nil
-		} else if e.suspended {
-			k, _ := Continuation(e.term)
-			e.term, e.suspended, resumed = k, false, true
-		}
-		if e.normal {
-			w.log.Events = append(w.log.Events, Event{Tick: w.tick, Entity: e.id, Decision: Skip})
-			continue
-		}
-		res, doc, err := trace.RecordUntil(w.cfg, e.term, w.pol.Strategy, w.pol.Budget, atBoundary)
-		if err != nil {
-			return fmt.Errorf("sched: entity %q: %w", e.id, err)
-		}
-		w.log.Events = append(w.log.Events, Event{Tick: w.tick, Entity: e.id, Decision: Run, Budget: w.pol.Budget, Slice: &doc, Rearm: rearm, Resumed: resumed})
-		e.term, e.suspended = res.Term, res.Stopped
-		e.normal = !res.Exhausted && !res.Stopped
+func (w *World) Tick() error { return w.tick1(1) }
+
+// TickParallel is Tick with the reductions spread over a pool of workers. The
+// entities share nothing during a tick, so each reduction is independent of
+// the others, and the results are committed in identifier order, which makes
+// the log byte-identical to the one Tick produces. workers below one means one
+// worker per available processor.
+func (w *World) TickParallel(workers int) error {
+	if workers < 1 {
+		workers = runtime.GOMAXPROCS(0)
 	}
-	w.tick++
-	return nil
+	return w.tick1(workers)
+}
+
+func (w *World) tick1(workers int) error {
+	turns := make([]turn, len(w.ents))
+	var todo []int
+	for i, e := range w.ents {
+		turns[i] = w.plan(e)
+		if !turns[i].skip {
+			todo = append(todo, i)
+		}
+	}
+	outs := make([]outcome, len(w.ents))
+	if workers <= 1 || len(todo) <= 1 {
+		for _, i := range todo {
+			outs[i] = w.run(turns[i])
+		}
+	} else {
+		if workers > len(todo) {
+			workers = len(todo)
+		}
+		var next atomic.Int64
+		var wg sync.WaitGroup
+		for k := 0; k < workers; k++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for {
+					j := int(next.Add(1)) - 1
+					if j >= len(todo) {
+						return
+					}
+					i := todo[j]
+					outs[i] = w.run(turns[i])
+				}
+			}()
+		}
+		wg.Wait()
+	}
+	return w.commit(turns, outs)
 }
 
 // Run performs n ticks.
 func (w *World) Run(n int) error {
 	for i := 0; i < n; i++ {
 		if err := w.Tick(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RunParallel performs n ticks with TickParallel.
+func (w *World) RunParallel(n, workers int) error {
+	for i := 0; i < n; i++ {
+		if err := w.TickParallel(workers); err != nil {
 			return err
 		}
 	}

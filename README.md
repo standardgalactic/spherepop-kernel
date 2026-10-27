@@ -30,15 +30,18 @@ Reduction takes `--strategy lo|li|ri|ro`, a `--fuel` bound, and the permission c
 
 | Package | Role |
 |---|---|
-| `term` | Immutable, hash-consed terms, paths, the parser |
-| `reduce` | The rule table, permissions, redex finding, strategies, the single authority `Apply` |
+| `term` | Immutable, hash-consed terms, paths, the parser, cached structural flags |
+| `reduce` | The rule table, permissions, redex finding, strategies, the single authority `Apply`, the permission automaton `CapGraph`, batch reduction on a worker pool |
 | `trace` | Trace documents with a hash chain, and an independent checker |
-| `sched` | A deterministic fuel-bounded scheduler and a checker for its log |
+| `sched` | A deterministic fuel-bounded scheduler, with suspension and a parallel tick that gives the same log, and a checker for its log |
 | `effects` | The host boundary: typed requests, schema, authorization, an append-only disposition log |
-| `encode` | Church-style data that a combinator program can branch on |
+| `encode` | Church-style data, canonical balanced-ternary transport encoding (SPQT), 32-byte `0x62`-gate XOR checksums, `BFP-64` bitplanes (`+AND=1`, `~NAND=-1`, `qt:55`), checked `p/q` density ratios, and 4-way unrolled `XORFold` / `Popcount` / SWAR `ByteDiff` |
 | `driver` | Persistent programs: observe, evaluate, extract effects, commit, repeat |
 | `lambda` | A front end that compiles `\x y. body` to combinators |
 | `arena` | A small headless example world: cells, door-gated portals, ships, host-held memory |
+| `internal/viz` | An integer projection of reduction steps to hue, intensity and complexity, served over `net/http` |
+| `tools/verify-py`, `conformance` | An independent verifier in Python and a shared corpus of 455 cases |
+| `tools/noemoji` | The check, and the cleaner, that keep emoji out of the tree |
 | `cmd/spherepop` | The command line |
 
 The packages depend downward only. `term` knows nothing about reduction, `reduce` knows nothing about hosts, and `arena` is an example host, not part of the language.
@@ -62,7 +65,10 @@ python3 tools/verify-py/spherepop_verify.py trace trace.json --require-strategy
 python3 tools/verify-py/spherepop_verify.py sched sched.json
 spherepop arena-schema > schema.json
 python3 tools/verify-py/spherepop_verify.py effects fx.jsonl --schema schema.json --anchor HEAD
+go test -bench=. ./encode/...
 ```
+
+Frame ABI v1 is a non-cryptographic XOR checksum. Equal-length payloads can collide, including raw bytes `00 00` and `01 01`; a passing frame check does not establish payload identity or authenticity. The ABI is retained for compatibility. `Gate0x62State` publishes an immutable fold/state pair atomically, allocating a new snapshot for each matching-fold CAS attempt; callers needing a consistent pair must call `Snapshot`, since separate `Fold` and `State` calls can span updates.
 
 Suspension is a scheduler protocol and not a reduction rule: an entity whose term reaches the root form `yield k` is stopped there, recorded as suspended, and resumed at `k` on its next turn (`SPEC.md` section 17a). The traces keep their format, the scheduler log distinguishes suspension from fuel exhaustion and from a host re-arm, and both verifiers check it. A test shows that suspending and resuming reaches the same result as uninterrupted evaluation under every strategy and budget.
 
@@ -74,7 +80,7 @@ A verified effects log shows that the host recorded these dispositions in a chai
 
 ## Not done
 
-Suspension points inside a round, atomic transactions, and a second independent implementation of the verifiers written from the specification. A proof for the `safe` and `u` modes is open.
+A proof for the `safe` and `u` modes is open, and the verifiers have not yet been reimplemented from the specification by anyone other than its author. `notes/claim-status.md` lists every claim with the evidence behind it and every open obligation.
 
 ## Specification
 
