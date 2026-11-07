@@ -1,5 +1,7 @@
 # spherepop-kernel
 
+[Position Dependent Admissibility In Combinatory Reduction](https://standardgalactic.github.io/spherepop-kernel/position-dependent-admissibility.pdf)
+
 An independently executable reduction language in Go, built to be hosted inside a game but never to depend on one. The kernel reduces terms of the circle calculus: SK-style combinators extended with brackets and a scope constructor, where the permission to contract a term depends on the chain of brackets around it. Everything runs from the command line with no engine, graphics or network.
 
 The design rests on keeping three things apart. A term is a structural object, a reduction step is an application of an explicit rule that a checker can verify on its own, and a host such as a game entity is only one place a reduction can run. Matching final hashes proves nothing about validity, so every run can emit a trace that an independent check replays step by step against the rule table. Computation, evidence and acceptance are separate objects with separate code.

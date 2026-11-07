@@ -1,0 +1,18 @@
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
+\contentsline {section}{\numberline {2}The Calculus}{3}{section.2}%
+\contentsline {section}{\numberline {3}Duplication, Nontermination, and the Dependence on Strategy}{4}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Confluence and the Ability to Find Results}{5}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Universality}{6}{subsection.3.2}%
+\contentsline {section}{\numberline {4}Scoped Permission}{7}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Confluence and the Boundary Rules}{8}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Restricted Absorption and the Settled Scope Constructor}{9}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Descent of Admissibility}{10}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Copying, Sharing and Erasure}{11}{subsection.4.4}%
+\contentsline {section}{\numberline {5}The Reference Implementation}{11}{section.5}%
+\contentsline {section}{\numberline {6}Evidence: Computation, Record and Acceptance}{12}{section.6}%
+\contentsline {section}{\numberline {7}Scheduling and Effects}{13}{section.7}%
+\contentsline {subsection}{\numberline {7.1}The Scheduler}{13}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}The Effects Boundary}{14}{subsection.7.2}%
+\contentsline {section}{\numberline {8}What the Term Carries and What a Supervisor Keeps}{15}{section.8}%
+\contentsline {section}{\numberline {9}The Supervised Baseline}{16}{section.9}%
+\contentsline {section}{\numberline {10}Open Obligations and Conclusion}{19}{section.10}%
