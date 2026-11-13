@@ -1,0 +1,52 @@
+def match(p, f, lits, b):
+    if isinstance(p, Sym):
+        if p in lits:
+            return f == p
+        if p != "_":
+            b[p] = f
+        return True
+    if isinstance(p, tuple):
+        if not isinstance(f, tuple):
+            return False
+        i = 0
+        while i < len(p):
+            if i + 1 < len(p) and p[i + 1] == ELL:
+                after = p[i + 2:]
+                avail = len(f) - i - len(after)
+                if avail < 0:
+                    return False
+                subs = []
+                for it in f[i:i + avail]:
+                    bb = {}
+                    if not match(p[i], it, lits, bb):
+                        return False
+                    subs.append(bb)
+                for v in pvars(p[i], lits):
+                    b[v] = Seq(bb[v] for bb in subs)
+                return match(after, f[i + avail:], lits, b)
+            if i >= len(f) or not match(p[i], f[i], lits, b):
+                return False
+            i += 1
+        return i == len(f)
+    return p == f
+
+def expand(t, b):
+    if isinstance(t, Sym):
+        return b.get(t, t)
+    if isinstance(t, tuple):
+        out, i = [], 0
+        while i < len(t):
+            if i + 1 < len(t) and t[i + 1] == ELL:
+                vs = [v for v in pvars(t[i], ()) if isinstance(b.get(v), Seq)]
+                n = max((len(b[v]) for v in vs), default=0)
+                for k in range(n):
+                    bb = dict(b)
+                    for v in vs:
+                        bb[v] = b[v][k]
+                    out.append(expand(t[i], bb))
+                i += 2
+            else:
+                out.append(expand(t[i], b))
+                i += 1
+        return tuple(out)
+    return t

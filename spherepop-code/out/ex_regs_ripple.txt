@@ -1,0 +1,11 @@
+def edge(self, b):
+    w, v = self.w, self.w.view
+    prev = b
+    for k in range(self.n):
+        cur = v.last_key("stage", k)
+        old = v.payload(cur)
+        w.pop(cur)
+        w.bind("stage", k, prev if k == 0 else v.payload(v.last_key("stage", k - 1)), ())
+        prev = old
+    w.bind("shifted-out", None, 0)
+    return self

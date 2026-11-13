@@ -1,0 +1,9 @@
+start  1011
+edge 0 0101  out 1
+edge 0 0010  out 1
+edge 1 1001  out 0
+ripple fault on 1000 with 0: 0000 (expected 0100)
+transfer: select 1 of [5,9,12] -> 9
+transfer: no select holds -> 9
+transfer: more than one source-select asserted: (1, 1, 0)
+ledger events: {'bind': 22, 'collapse': 3, 'pop': 15}

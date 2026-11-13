@@ -1,0 +1,35 @@
+def resolve(self, name):
+    """Return (kind, detail). Kinds follow the dialect's rule order."""
+    v = self.w.view
+    if self.dialect == "cmd":
+        if name.lower() in CMD_BUILTINS:
+            return "builtin", name.lower()
+        exts = [""] if os_ext(name) else PATHEXT
+        if "\\" in name:
+            scopes = [(name.rsplit("\\", 1)[0], e) for e in exts]
+            name = name.rsplit("\\", 1)[1]
+        else:
+            scopes = [(d, e) for d in [self.cwd()] + self.pathlist() for e in exts]
+        hit, _ = search(self.w, name, scopes, self.probe_win)
+        return ("path", hit) if hit else ("missing", None)
+    a = v.last_key("alias", (self.id, name))
+    if a is not None:
+        return "alias", v.payload(a)
+    if name in BASH_BUILTINS:
+        return "builtin", name
+    if "/" in name:
+        d, n = posixpath.split(self.abspath(name))
+        out, hit = self.probe_linux(d, n)
+        if out == "hit":
+            return "path", hit
+        return ("noexec", hit) if out.startswith("skip") else ("missing", None)
+    h = v.last_key("hash", (self.id, name))
+    if h is not None:
+        return "hashed", v.payload(h)
+    hit, tried = search(self.w, name, self.pathlist(), self.probe_linux)
+    if hit:
+        self.w.bind("hash", (self.id, name), hit[0])
+        return "path", hit
+    if any(o.startswith("skip") for _, o in tried):
+        return "noexec", None
+    return "missing", None

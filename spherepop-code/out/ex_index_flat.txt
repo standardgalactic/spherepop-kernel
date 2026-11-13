@@ -1,0 +1,38 @@
+def solve_flat(self, reqs, pinned=None):
+    w = self.w
+    pinned = pinned or {}
+    decided = []
+
+    def rec(todo, chosen, cons, parent):
+        if not todo:
+            return chosen
+        name = todo[0]
+        for ver in self.releases(name):
+            if not all(satisfies(ver, s) for s, _ in cons[name]):
+                continue
+            deps = dict(self.release(name, ver)[0])
+            ncons = {k: list(x) for k, x in cons.items()}
+            bad = False
+            for dn, ds in deps.items():
+                ncons.setdefault(dn, []).append((ds, name))
+                if dn in chosen and not satisfies(chosen[dn], ds):
+                    bad = True
+            if bad:
+                continue
+            d = w.bind("decision", name, ver, tuple(parent.get(r) for r in [name] if parent.get(r) is not None))
+            decided.append(d)
+            nxt = todo[1:] + [dn for dn in deps if dn not in chosen and dn not in todo and dn != name]
+            res = rec(nxt, {**chosen, name: ver}, ncons, {**parent, **{dn: d for dn in deps}})
+            if res is not None:
+                return res
+            w.refuse(d, "backtrack")
+        return None
+
+    cons = {n: [(s, "root")] for n, s in reqs.items()}
+    for n, v in pinned.items():
+        cons.setdefault(n, []).append(("==" + v, "installed"))
+    res = rec(list(cons), {}, cons, {})
+    if res is None:
+        attempt_refused(w, "attempt", tuple(sorted(reqs.items())), "unsatisfiable")
+        raise ResolutionError("no consistent set of versions for %r" % (reqs,))
+    return res

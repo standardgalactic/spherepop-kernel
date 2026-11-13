@@ -1,0 +1,32 @@
+def _commit(self, e):
+    k = e[0]
+    if k == "bind":
+        if e[1] != len(self.spheres):
+            raise Inadmissible("sphere id out of order")
+        for d in e[5]:
+            if d not in self.spheres:
+                raise Inadmissible("unborn dependency %r" % d)
+    elif k in ("pop", "refuse"):
+        if self.status.get(e[1]) != LIVE:
+            raise Inadmissible("%s of non-live sphere %r" % (k, e[1]))
+        if k == "refuse" and not (isinstance(e[2], str) and e[2]):
+            raise Inadmissible("refusal requires a reason")
+    elif k != "collapse":
+        raise Inadmissible("unknown event %r" % (k,))
+    self.ledger.append(e)
+    if k == "bind":
+        s = Sphere(e[1], e[2], e[3], e[4], e[5])
+        self.spheres[s.id] = s
+        self.status[s.id] = LIVE
+        self._tag.setdefault(s.tag, {})[s.id] = None
+        self._key.setdefault((s.tag, s.key), {})[s.id] = None
+    elif k in ("pop", "refuse"):
+        s = self.spheres[e[1]]
+        self.status[s.id] = POPPED if k == "pop" else REFUSED
+        if k == "refuse":
+            self.reasons[s.id] = e[2]
+        del self._tag[s.tag][s.id]
+        kk = (s.tag, s.key)
+        del self._key[kk][s.id]
+        if not self._key[kk]:
+            del self._key[kk]

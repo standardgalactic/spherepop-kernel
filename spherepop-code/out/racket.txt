@@ -1,0 +1,30 @@
+> (require units)
+
+> (c->f 100)
+212
+> (internal-helper 2)
+error: unbound identifier: internal-helper
+> (require (prefix-in u: units))
+
+> (u:km->miles 1000000)
+621371
+> (require game)
+
+> (score 60 30 20)
+100
+> (+ 60 30 20)
+110
+> (require traffic)
+
+> (run 'green '(timer timer))
+red
+> (light 'red 'fault)
+flashing
+> (define c->f 1)
+error: define: identifier already imported: c->f
+> (require no-such)
+error: cannot open module: no-such
+where c->f: ('imported', 'units') ; where score: ('imported', 'game') ; where map: ('language', 'base')
+imports of traffic: [('define-fsm', 'fsm')]
+imports of game: []
+modules instantiated: ['base', 'fsm', 'game', 'saturating', 'traffic', 'units']

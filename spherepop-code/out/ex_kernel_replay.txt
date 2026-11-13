@@ -1,0 +1,19 @@
+@classmethod
+def replay(cls, events, rules=None):
+    w = cls()
+    for e in events:
+        if e[0] == "collapse" and rules and e[1] in rules:
+            if digest(rules[e[1]](w.view)) != e[2]:
+                raise Inadmissible("collapse digest mismatch for %s" % e[1])
+        w._commit(e)
+    return w
+
+def verify(self, rules=None, expected_chain=None):
+    w2 = World.replay(self.ledger, rules)
+    ok = (w2.status == self.status and w2.reasons == self.reasons
+          and {t: list(d) for t, d in w2._tag.items()} == {t: list(d) for t, d in self._tag.items()})
+    if expected_chain is not None:
+        ok = ok and w2.chain() == expected_chain
+    if not ok:
+        raise Inadmissible("replay disagrees with indexed state")
+    return True

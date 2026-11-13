@@ -1,0 +1,109 @@
+
+================================================================
+Flyxion correction run - 2026-11-13 19:13:56
+Backup snapshot: backup_20261113_191356
+================================================================
+
+[name/concept] ./Programming_Languages_Built_on_Indestructible_Ledgers.txt
+  L356: Affliction introduces a mechanism called mutation by supersession.
+        -> Flyxion introduces a mechanism called mutation by supersession.
+  [propagate] ./Programming_Languages_Built_on_Indestructible_Ledgers.vtt: "Affliction introduces a mechanism" -> "Flyxion introduces a mechanism"
+  [propagate] ./Programming_Languages_Built_on_Indestructible_Ledgers.srt: "Affliction introduces a mechanism" -> "Flyxion introduces a mechanism"
+  [propagate] ./Programming_Languages_Built_on_Indestructible_Ledgers.json: "Affliction introduces a mechanism" -> "Flyxion introduces a mechanism"
+
+[substitution] ./Programming_Languages_Built_on_Indestructible_Ledgers.tsv
+  L40: 102400	104960	2026 graduate text by Flexion.
+  L43: 112340	117200	I mean, Flexion is proposing a completely different foundational physics for computation.
+  L68: 194460	196880	Yeah, Floxian calls it the sphere pop kernel.
+  L164: 492020	495880	Because before flexion even gets to software, the tech starts with hardware.
+  L185: 582520	591120	But in the sphere pop reconstruction, Fluxion models the actual physics of that clock edge. The system binds the new input bit as a sphere.
+  L301: 944400	947900	Flyseon models control flow as a physical manifestation of choice.
+  L465: 1488680	1492980	Flixion actually points out that they didn't set out to add version control as a feature.
+  L498: 1595320	1602680	Fly-in groups bash the Windows command prompt and package managers together because a shell is primarily a loading language.
+  L603: 1912640	1916280	And Flexion implements two different solutions to this in the prototype.
+  L665: 2142240	2145980	And Flexion's ledger shows that this is not just a theoretical annoyance.
+  L676: 2181700	2186720	Flexion identifies two distinct ways a domain-specific language changes a program.
+  L714: 2307460	2309340	Floxian calls this staleness.
+  L733: 2373460	2379280	What happens when Flexian forces all these wildly different universes into the exact same ledger at the exact same time?
+  L735: 2383420	2389660	Flexian runs a racket call, a Basic program, a Bash session, and a 4th program simultaneously,
+  L745: 2413760	2417520	And during early testing, Flexian found exactly that kind of collision.
+  L781: 2515940	2521140	And Flixion provides a measured profile, a comparative structural analysis of the workloads.
+  L854: 2745940	2750740	Fluxion leaves it as an open problem how to elegantly model that kind of time travel
+  (17 line(s) changed)
+
+[substitution] ./Programming_Languages_Built_on_Indestructible_Ledgers.srt
+  L155: 2026 graduate text by Flexion.
+  L167: I mean, Flexion is proposing a completely different foundational physics for computation.
+  L267: Yeah, Floxian calls it the sphere pop kernel.
+  L651: Because before flexion even gets to software, the tech starts with hardware.
+  L735: But in the sphere pop reconstruction, Fluxion models the actual physics of that clock edge. The system binds the new input bit as a sphere.
+  L1199: Flyseon models control flow as a physical manifestation of choice.
+  L1855: Flixion actually points out that they didn't set out to add version control as a feature.
+  L1987: Fly-in groups bash the Windows command prompt and package managers together because a shell is primarily a loading language.
+  L2407: And Flexion implements two different solutions to this in the prototype.
+  L2655: And Flexion's ledger shows that this is not just a theoretical annoyance.
+  L2699: Flexion identifies two distinct ways a domain-specific language changes a program.
+  L2851: Floxian calls this staleness.
+  L2927: What happens when Flexian forces all these wildly different universes into the exact same ledger at the exact same time?
+  L2935: Flexian runs a racket call, a Basic program, a Bash session, and a 4th program simultaneously,
+  L2975: And during early testing, Flexian found exactly that kind of collision.
+  L3119: And Flixion provides a measured profile, a comparative structural analysis of the workloads.
+  L3411: Fluxion leaves it as an open problem how to elegantly model that kind of time travel
+  (17 line(s) changed)
+
+[substitution] ./Programming_Languages_Built_on_Indestructible_Ledgers.json
+  L1: [JSON content omitted]
+  (1 line(s) changed)
+
+[substitution] ./Programming_Languages_Built_on_Indestructible_Ledgers.txt
+  L39: 2026 graduate text by Flexion.
+  L42: I mean, Flexion is proposing a completely different foundational physics for computation.
+  L67: Yeah, Floxian calls it the sphere pop kernel.
+  L163: Because before flexion even gets to software, the tech starts with hardware.
+  L184: But in the sphere pop reconstruction, Fluxion models the actual physics of that clock edge. The system binds the new input bit as a sphere.
+  L300: Flyseon models control flow as a physical manifestation of choice.
+  L464: Flixion actually points out that they didn't set out to add version control as a feature.
+  L497: Fly-in groups bash the Windows command prompt and package managers together because a shell is primarily a loading language.
+  L602: And Flexion implements two different solutions to this in the prototype.
+  L664: And Flexion's ledger shows that this is not just a theoretical annoyance.
+  L675: Flexion identifies two distinct ways a domain-specific language changes a program.
+  L713: Floxian calls this staleness.
+  L732: What happens when Flexian forces all these wildly different universes into the exact same ledger at the exact same time?
+  L734: Flexian runs a racket call, a Basic program, a Bash session, and a 4th program simultaneously,
+  L744: And during early testing, Flexian found exactly that kind of collision.
+  L780: And Flixion provides a measured profile, a comparative structural analysis of the workloads.
+  L853: Fluxion leaves it as an open problem how to elegantly model that kind of time travel
+  (17 line(s) changed)
+
+[substitution] ./Programming_Languages_Built_on_Indestructible_Ledgers.vtt
+  L118: 2026 graduate text by Flexion.
+  L127: I mean, Flexion is proposing a completely different foundational physics for computation.
+  L202: Yeah, Floxian calls it the sphere pop kernel.
+  L490: Because before flexion even gets to software, the tech starts with hardware.
+  L553: But in the sphere pop reconstruction, Fluxion models the actual physics of that clock edge. The system binds the new input bit as a sphere.
+  L901: Flyseon models control flow as a physical manifestation of choice.
+  L1393: Flixion actually points out that they didn't set out to add version control as a feature.
+  L1492: Fly-in groups bash the Windows command prompt and package managers together because a shell is primarily a loading language.
+  L1807: And Flexion implements two different solutions to this in the prototype.
+  L1993: And Flexion's ledger shows that this is not just a theoretical annoyance.
+  L2026: Flexion identifies two distinct ways a domain-specific language changes a program.
+  L2140: Floxian calls this staleness.
+  L2197: What happens when Flexian forces all these wildly different universes into the exact same ledger at the exact same time?
+  L2203: Flexian runs a racket call, a Basic program, a Bash session, and a 4th program simultaneously,
+  L2233: And during early testing, Flexian found exactly that kind of collision.
+  L2341: And Flixion provides a measured profile, a comparative structural analysis of the workloads.
+  L2560: Fluxion leaves it as an open problem how to elegantly model that kind of time travel
+  (17 line(s) changed)
+
+==== Candidate Variants (none found) ====
+
+==== Summary ====
+Files scanned        : 5
+Files updated        : 5
+Files unchanged      : 0
+Unique candidates    : 0
+Elapsed time         : 25s
+
+================================================================
+Run complete at 2026-11-13 19:14:21
+================================================================

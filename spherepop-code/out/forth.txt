@@ -1,0 +1,18 @@
+ok> 2 3 +
+    stack [5]
+    explain: (2 + 3)
+ok> drop 3 dup *
+    stack [9]
+    explain: (3 * 3)
+ok> drop : sq dup * ; 7 sq
+    stack [49]
+ok> drop : cube dup sq * ; 3 cube
+    stack [27]
+ok> : sq drop 0 ; 3 cube
+    stack [27, 27]
+    with late binding the same cube now yields [0]
+ok> : fact dup 1 > if dup 1- recurse * then ; drop drop 10 fact
+    stack [3628800]
+    output 'result 3628800 \n'
+ok> + + +
+    refused: +: stack-underflow ; stack after abort []

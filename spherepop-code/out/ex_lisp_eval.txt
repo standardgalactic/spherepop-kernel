@@ -1,0 +1,12 @@
+def eval(self, x, env):
+    couplings = []
+    try:
+        value = self._loop(x, env, couplings)
+    except BaseException:
+        for c in reversed(couplings):
+            if self.w.status[c] == "live":
+                self.w.refuse(c, "abort")
+        raise
+    for c in reversed(couplings):
+        self.w.pop(c)
+    return value

@@ -1,0 +1,9 @@
+def explain(self, cid):
+    s = self.w.spheres[cid]
+    if not s.deps:
+        return str(s.payload)
+    if s.key in PASS or s.key in ("@", "const", "depth", "i", "j", "dup"):
+        return self.explain(s.deps[0])
+    if len(s.deps) == 2:
+        return "(%s %s %s)" % (self.explain(s.deps[0]), s.key, self.explain(s.deps[1]))
+    return "%s(%s)" % (s.key, self.explain(s.deps[0]))

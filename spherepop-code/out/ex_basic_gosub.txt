@@ -1,0 +1,7 @@
+elif sig[0] == "gosub":
+    w.bind("gosub", None, (li, si + 1))
+    li, si = jump(n, sig[1])
+elif sig[0] == "return":
+    g = v.last("gosub")
+    if g is None: self.fail("return", n)
+    li, si = w.pop(g)

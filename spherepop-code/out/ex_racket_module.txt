@@ -1,0 +1,27 @@
+def _module(self, x, env):
+    name, lang = str(x[1]), str(x[2])
+    menv = self.w.bind("env", None, None)
+    self._import_lang(menv, lang)
+    self._provides.append([])
+    try:
+        for f in x[3:]:
+            self.eval(f, menv)
+        specs = list(self._provides[-1])
+    finally:
+        self._provides.pop()
+    self._declare(name, menv, specs)
+    return Sym(name)
+
+def _require(self, x, env):
+    w, v = self.w, self.w.view
+    for spec in x[1:]:
+        for n, e in self._spec(spec).items():
+            if v.last_key("binding", (env, n)) is not None:
+                self.err("require: identifier already defined: %s" % n, "import-conflicts-with-definition")
+            prior = v.last_key("import", (env, n))
+            if prior is not None:
+                if w.spheres[prior].deps[0] == e:
+                    continue
+                self.err("require: identifier imported twice with different bindings: %s" % n, "conflicting-import")
+            w.bind("import", (env, n), w.spheres[e].payload, (e,))
+    return None

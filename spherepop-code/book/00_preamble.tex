@@ -1,0 +1,66 @@
+\documentclass[11pt,oneside]{report}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1.15in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.gates.logic.US,calc}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parskip}{0.55em}
+\setlength{\parindent}{0pt}
+\linespread{1.05}
+
+\newcommand{\SP}{SpherePOP}
+\newcommand{\Pop}{\operatorname{Pop}}
+\newcommand{\Refuse}{\operatorname{Refuse}}
+\newcommand{\Bind}{\operatorname{Bind}}
+\newcommand{\Collapse}{\operatorname{Collapse}}
+
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[chapter]
+\newtheorem{theorem}[proposition]{Theorem}
+\theoremstyle{definition}
+\newtheorem{definition}[proposition]{Definition}
+\newtheorem{example}[proposition]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[proposition]{Remark}
+
+\lstdefinestyle{code}{basicstyle=\ttfamily\footnotesize,breaklines=true,columns=fullflexible,
+  keepspaces=true,showstringspaces=false,frame=single,framerule=0.3pt,rulecolor=\color{black!35},
+  xleftmargin=0.6em,xrightmargin=0.6em,aboveskip=0.8em,belowskip=0.6em,
+  keywordstyle=\bfseries,commentstyle=\itshape\color{black!60}}
+\lstdefinestyle{plain}{style=code,keywordstyle={},commentstyle={}}
+\lstset{style=code}
+\newcommand{\code}[2][Python]{\lstinputlisting[language=#1,style=code]{out/#2.txt}}
+\newcommand{\transcript}[1]{\lstinputlisting[style=plain]{out/#1.txt}}
+
+\tikzset{
+  bus/.style={thick},
+  wire/.style={thick},
+  blk/.style={draw,thick,minimum height=0.8cm,align=center,font=\small},
+  dot/.style={circle,fill,inner sep=1.2pt}
+}
+\newcommand{\busmark}{node[pos=0.5,sloped,inner sep=0pt]{\footnotesize $/$} node[pos=0.5,above=3pt,inner sep=0pt]{\scriptsize 4}}
+
+\begin{document}
+\pagenumbering{roman}
+\begin{titlepage}
+\centering
+\vspace*{2.2cm}
+{\LARGE\bfseries Constructing Programming Languages\\[0.4em] from \SP\ Primitives\par}
+\vspace{0.9cm}
+{\Large A Graduate Text on Executable Prototypes:\\[0.3em] Stacks, Lisp, Modules, BASIC, Shells, and Package Indexes\par}
+\vspace{2.2cm}
+{\large Flyxion\par}
+{\normalsize Independent Researcher\par}
+\vspace{1.2cm}
+{\normalsize November 2026\par}
+\vfill
+\end{titlepage}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}

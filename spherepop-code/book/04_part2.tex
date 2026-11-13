@@ -1,0 +1,292 @@
+\part{Language Prototypes}
+
+\chapter{Forth: Programs as Histories of a Stack}
+
+\section{The Instruction Boundary}
+
+A Forth program is a sequence of words, and each word is a function from stacks to stacks \cite{moore74,brodie,ansi-forth}. The semantics is therefore the simplest of any language in this book, and for that reason it is the place where the central invariant of the method can be stated without interference. Let $S_i$ be the stack after $i$ completed instructions of a program, let $H_i$ be the \SP{} history after the same instructions, and let $\pi$ be the projection that reads the live cells in order of birth and returns their payloads. The claim to be established is $\pi(H_i)=S_i$ for every $i$. The claim is made at the instruction boundary and at no other point. In the middle of an instruction the history may contain a cell that has been born but not yet consumed, or a consumed operand whose result has not been bound, and the projection is not required to agree with anything there. This restriction is the same one that Chapter~3 places on a register, where the observable is the word between clock edges and not the wires inside an edge.
+
+The state components are few. A \texttt{cell} sphere holds one stack entry, the live cells in order of birth are the stack, and a cell that has been consumed is refused with the name of the word that consumed it. A \texttt{word} sphere holds a definition, a \texttt{frame} sphere marks an active call, and \texttt{loop}, \texttt{iter}, and \texttt{branch} spheres carry control. Output is a \texttt{forth.out} sphere, a variable is a \texttt{forth.var} sphere whose cell contents are superseded on store, and a constant is a \texttt{const} sphere. Every tag is distinct from the tags of the other languages in this book, for reasons given in Chapter~11.
+
+\section{Operand Order and the Identity of a Copy}
+
+Two decisions in the Forth prototype are easy to get wrong and are worth stating as decisions. The first is operand order. Addition is commutative, so the stack $5$ is produced equally well by consuming the two operands in either order, and a prototype that pops them in the wrong order passes every test that uses only addition and multiplication. Subtraction, division, comparison, and the stack shuffles expose the error. The prototype therefore pops the top cell first, calls it the right operand, pops the next cell, calls it the left operand, and binds the result with the dependency tuple (left, right) in that order. The provenance of the result then reads in source order, so that the program \texttt{2 3 +} explains itself as $(2 + 3)$ and the program \texttt{7 2 -} as $(7 - 2)$.
+
+\transcript{forth}
+
+The second decision concerns \texttt{dup}. A Forth programmer may think of \texttt{dup} as producing two references to one value, or as producing a value and an independent copy of it. Both are consistent with the stack projection, and the choice is observable only through provenance. The prototype takes the second reading with a link. \texttt{dup} binds a new cell with the same payload as the top cell and records the top cell as its dependency, so the two cells are distinct spheres and each can be consumed independently, and the history still shows that one was derived from the other. The explanation function follows that dependency through \texttt{dup}, which is why $3\ \mathrm{dup}\ {*}$ explains as $(3 * 3)$ and not as an expression over two unrelated literals. The alternative, in which \texttt{dup} binds nothing and the top cell is simply counted twice, makes consumption ambiguous, because the first \texttt{drop} after it would have to decide which occurrence disappears. The listing shows the stack words as they appear in the source.
+
+\code{ex_forth_stack}
+
+\section{Control as Choice, Calls as Frames}
+
+Conditionals are the first place where the primitives do real work. A word such as \texttt{if} consumes a flag, then binds both branches as \texttt{branch} spheres coupled to the flag, and then applies the derived form of Chapter~1: the taken branch is popped, the other is refused with the reason that it was not taken, and the taken branch is executed. The refused branch remains in the ledger with its payload, so the history records that an alternative existed. This is a use of $\Pop(A)\parallel\Refuse(B)$ in its original sense, and it is the reason that a reader of the ledger can answer the question of which branch a given run did not take.
+
+\code{ex_forth_if}
+
+A call binds a \texttt{frame} sphere coupled to the word being called, runs the body, and pops the frame on return. The recursion word reads the most recent live frame to find the definition it belongs to, so it works from inside nested control structures without any extra bookkeeping. The factorial transcript above computes the factorial of ten through this mechanism and ends with two live spheres, the result and one remaining cell of the original stack, while ten spheres have been refused along the way. This is the profile row for Forth in Chapter~12.
+
+\code{ex_forth_call}
+
+\section{Definitions, Shadowing, and When Names Are Resolved}
+
+Redefinition raises a question that every language answers in some way: when a word is defined in terms of another word, and the other word is later redefined, does the first word see the new definition? Forth answers that a call inside a definition is fixed when the definition is compiled, so that redefining a word does not change the behavior of definitions that already use it. The prototype supports both answers as a flag. With early binding, which is the default, the compile step resolves every call in a body to the sphere of the word it named at that moment, and the old \texttt{word} sphere is refused with the reason that it was shadowed when a new definition arrives. With late binding, calls are resolved by name when they run. The transcript shows the same program under both flags: after \texttt{sq} is redefined to discard its argument, \texttt{cube} still computes twenty-seven under early binding, and computes the redefinition's result under late binding.
+
+An unknown word inside a definition is a compile-time refusal under early binding, with the reason that the word is unknown, and a definition that fails to compile leaves no word sphere. The same program under late binding compiles and fails when it is run. A scholar who wishes to relate this to the lambda calculus can note that early binding corresponds to closing a term over its free names at the moment of abstraction, and late binding to leaving the names free until the term is applied. The ledger records the difference without argument, since under early binding the body of \texttt{cube} contains dependencies on a specific \texttt{word} sphere and under late binding it contains only a name.
+
+\section{Errors as Documented Refusals}
+
+A word that cannot run, such as \texttt{+} on an empty stack, is not allowed to leave a half-built state. The prototype records the proposal as an \texttt{attempt} sphere and refuses it at once with a reason, here \texttt{stack-underflow}, then abandons the rest of the line and refuses every live cell, frame, and loop sphere with the reason \texttt{abort}. The last transcript line shows the outcome for three \texttt{+} words applied to an empty stack: the refusal is reported and the stack after the abort is empty. Clearing the data stack after an abort matches the behavior of many Forth systems at the level this book models, and the prototype differs from them in that the refused attempt, with its reason, remains available to later inspection, as does every cell that the abort discarded.
+
+\section{Adequacy at the Instruction Boundary}
+
+\begin{proposition}[Forth adequacy]\label{prop:forth}
+Let $P$ be a straight-line Forth program over the stack words of the prototype, and let $\mathrm{Ref}$ be the reference stack machine that applies each word to a Python list. For every prefix $P_i$ of $P$ that ends at an instruction boundary, $\pi(H_i)=\mathrm{Ref}(P_i)$.
+\end{proposition}
+
+\begin{proof}
+By induction on $i$. For $i=0$ both sides are the empty stack. Suppose the claim holds for $i$ and let $w$ be the $(i+1)$-th word. Each word of the prototype refuses the cells it consumes and binds the cells it produces, in the order the reference machine removes and appends list entries. The live cells in order of birth are therefore the list after the step, because the cells that were not consumed keep their relative order and every produced cell is born after them. For $\mathtt{swap}$, $\mathtt{rot}$, and the other shuffles the produced cells are bound in the order the reference machine appends them, which is the point of the operand-order decision above. Hence $\pi(H_{i+1})=\mathrm{Ref}(P_{i+1})$.
+\end{proof}
+
+The proof is short because the prototype was built to make it short, and a proof of this kind never replaces testing, since it covers the prototype as specified and not as written. The test suite closes that gap by generating two hundred random programs, running each through the prototype and through an independent implementation of the reference machine, and comparing the stack after every instruction. A discrepancy at any instruction fails the test, so the invariant is checked at every boundary and not merely at the end of a program.
+
+\paragraph{Exercise 4.1.} Add the words \texttt{pick} and \texttt{roll}, which take an index from the stack. State the provenance dependencies of the produced cells, and extend the random tester to cover them. Decide what \texttt{explain} should return for a \texttt{roll}.
+
+\paragraph{Exercise 4.2.} Under early binding, a word that refers to itself must be compiled before its own definition exists. The prototype handles this with a dedicated recursion word. Explain why a plain call to the defining name cannot be resolved by the early-binding rule, and describe an alternative that resolves the name against the sphere being defined.
+
+\paragraph{Exercise 4.3.} Replace the integer cells with cells that carry a type tag, and make \texttt{+} refuse a pair of cells with unequal tags. Identify which observables change and which proof steps of Proposition~\ref{prop:forth} remain valid.
+
+\chapter{A Lisp Core: Environments, Closures, and Tail Calls}
+
+\section{What Must Be Reconstructed}
+
+A Lisp interpreter in the tradition of McCarthy and Landin \cite{mccarthy60,landin64,sicp} has three pieces of state that a prototype must place somewhere: the bindings that map names to values, the closures that capture those bindings, and the activations that record where a computation will resume. A conventional interpreter stores all three in host data structures, with an association list or hash table for bindings, a record for a closure, and the host call stack for activations. The \SP{} prototype stores all three in the ledger. A binding is a \texttt{binding} sphere with the variable as its key, its value as payload, and its environment frame as a dependency. A closure is a \texttt{lambda} sphere whose payload holds the parameters and body and whose dependency is the environment in which it was created. An activation is a sphere coupled to the activation that called it. Nothing else is needed, and in particular no host recursion is needed to represent a call, which matters for the next section.
+
+\section{Environments and Mutation by Supersession}
+
+Evaluating a symbol looks up the latest live \texttt{binding} sphere with that key in the nearest enclosing frame and then outward. Evaluating \texttt{define} binds a new sphere in the current frame. Evaluating \texttt{set!} on an existing variable is mutation, which the kernel does not have, and the prototype realizes it by the derived form of Chapter~1: the old binding is refused with the reason that it was superseded, and a new binding is bound with the old one as its dependency. The lineage of a variable is then the chain of dependencies from the live binding back to its first value, and the function \texttt{lineage} returns it.
+
+\code{ex_lisp_env}
+
+The counter in the transcript shows closure capture and mutation together. The call to \texttt{make-counter} creates a frame in which \texttt{n} is bound to zero and returns a closure whose environment is that frame. Each call to the closure increments \texttt{n} by supersession and returns the new value, and after three calls the lineage of \texttt{n} in the captured frame is the list zero, one, two, three. A reader accustomed to boxes and store-passing semantics will recognize that the ledger is a store that was never overwritten, and that the lineage is the history of a location in that store.
+
+\transcript{lisp}
+
+\section{The Evaluator and Tail Calls}
+
+The evaluator is a function on an expression and an environment that dispatches on the form of the expression, and it follows the usual special forms: \texttt{quote}, \texttt{if}, \texttt{cond}, \texttt{define}, \texttt{set!}, \texttt{lambda}, \texttt{let}, \texttt{begin}, and \texttt{define-syntax-rule}. The listing shows the dispatch.
+
+\code{ex_lisp_eval}
+
+The treatment of a procedure call is the point at which the ledger-based design pays for itself. In a host-recursive interpreter a call to a procedure in tail position still consumes a host stack frame unless the interpreter implements an explicit trampoline. In the prototype the evaluator is a loop, and a call in tail position does not recurse. It commits the activation sphere of the call it is replacing, binds a new \texttt{call} sphere coupled to the closure being applied, creates the callee's environment frame, and continues the loop with the callee's body, so that at most one activation sphere of such a chain is live at a time. The final line of the transcript reports the result: a loop that makes three thousand tail calls finishes with zero live call spheres. The corresponding non-tail recursion, such as the naive definition of Fibonacci used for the profile in Chapter~12, leaves its activations live until they return, and the live count grows with the depth of the pending computation, as it must.
+
+\code{ex_lisp_call}
+
+This property is a statement about $\Omega$ and not about the host. The host evaluator still recurses on the structure of the expression, so a deeply nested expression can exhaust the host stack, but the number of live spheres, which is the quantity the model cares about, is bounded by the number of pending non-tail calls plus the size of the data. A reader who wishes to see why this agrees with the standard definition of proper tail recursion may compare it with the space-complexity framing in the Scheme literature, where a tail call must not add to the live space that the program needs.
+
+\section{Macros as Ledger Rewriting}
+
+The prototype supports a pattern-based macro form, \texttt{define-syntax-rule}, with ellipsis patterns that may be nested. A macro is a sphere holding its pattern and template, and use of a macro is a rewrite performed before evaluation: the matcher binds pattern variables to the matching pieces of the form, the expander substitutes them into the template, and the result is evaluated in the use-site environment. The matcher and expander are small enough to list.
+
+\code{ex_lisp_macro}
+
+The expansion is not hygienic, in the sense of the literature on hygienic expansion \cite{kohlbecker86}. A template that introduces a binding can capture a user variable of the same name, and a template that refers to a free name sees the use-site binding of that name. This is a limitation of the prototype and it is stated here because Chapter~7 builds a finite-state-machine notation on the macro form and relies on avoiding the capture by the choice of names in the template. A hygienic expander would rename template-introduced binders with fresh names, and the ledger would record those renames as spheres whose lineage ends in the macro that introduced them. The reader who adds this extension will find that the lineage function already has the shape that is needed.
+
+\section{A Prelude Written in the Language}
+
+The remaining list operations, \texttt{map}, \texttt{filter}, \texttt{foldl}, \texttt{foldr}, \texttt{reverse}, and \texttt{range}, are not primitives. They are defined in the language itself in a prelude, evaluated when a world is created, and they are the first programs the interpreter runs. The prelude is the reason the Fibonacci profile in Chapter~12 shows a Lisp world that is large even before the workload starts, a fact that is visible in the ledger and would be invisible in a host-state design.
+
+\paragraph{Exercise 5.1.} Add \texttt{call/cc} in its escape-only form. Decide what the continuation sphere depends on and which spheres must be refused when the continuation is invoked.
+
+\paragraph{Exercise 5.2.} Implement hygiene by renaming template-introduced binders with fresh names. Write a test in which a user variable named like the template's temporary is captured by the current expander and preserved by the new one.
+
+\paragraph{Exercise 5.3.} Use the lineage function to implement a stepper that reports every superseded value of a given variable and the application that caused each supersession.
+
+\chapter{A Racket Layer: Modules, Provision, and Requirement}
+
+\section{From a Language to a Language of Modules}
+
+Racket \cite{racket-ref,flatt02} differs from the Lisp of the previous chapter in organizing programs as modules that are loaded on demand, and in making the language of a module a choice that the module declares. Both features are properties of how names enter a scope, and both are therefore natural subjects for a ledger that already records every name's introduction. The prototype in this chapter extends the Lisp core with the following forms. \texttt{module} declares a module with a name, an initial language, and a body. \texttt{provide} marks which definitions a module exports. \texttt{require} brings the exports of another module into the current scope. Four import modifiers, \texttt{only-in}, \texttt{except-in}, \texttt{prefix-in}, and \texttt{rename-in}, adjust the imported names. Finally \texttt{provide} accepts \texttt{all-defined-out} and \texttt{all-from-out}, which are bulk forms.
+
+The state added by the layer is small. A \texttt{source} sphere holds the text of a module that has been indexed but not loaded, a module sphere is bound when the module is declared, an \texttt{import} sphere records one name that a scope received from a module, and a \texttt{langimport} sphere records one name that a module received from its initial language. The distinction between the last two is the mechanism of Chapter~7, and it is the reason the layer is useful for the topic of this book.
+
+\section{Declaration, Instantiation, and Lazy Loading}
+
+A \texttt{require} of a module that has not been declared does not fail at once. It searches the source index for a \texttt{source} sphere whose key is the module name, declares the module from its text, instantiates it by evaluating its body, and then performs the import. A module that is not in the index is a refusal with the reason that it cannot be opened. Declaration binds a \texttt{module} sphere whose dependencies are its environment and the \texttt{source} sphere it was loaded from, so the lineage of a module leads back to the text that defined it, and the ordering of events is a readable record of what was loaded and when.
+
+\code{ex_racket_module}
+\code{ex_racket_find}
+
+The transcript for this chapter exercises each behavior in turn. After \texttt{(require units)} the function \texttt{c->f} is available and an internal helper that \texttt{units} does not provide is unbound. A prefixed import makes the same module's other functions available under a prefix. Defining a name that was imported is refused with the reason that the identifier is already imported, which matches the module system's rule that a module-level definition may not silently replace an import. The query \texttt{where} reports, for a name, whether it came from the module language or from an import and from which module, and the query \texttt{imports\_of} reports what a module itself required. The final lines of the transcript show that the modules instantiated during the session are the base language, the macro module, the two DSLs, the traffic-light module that depends on the macro module, and the units module.
+
+\transcript{racket}
+
+\section{Conflicts and Staleness}
+
+Two behaviors of the layer are worth isolating because they are the same behaviors that package managers exhibit at larger scale. The first is a name conflict. If two modules provide the same name with different definitions and both are required without a prefix, the second import is refused with the reason \texttt{conflicting-import}, and the first import remains. Requiring the same definition twice, by two routes, is not a conflict and is accepted silently, and requiring a name that the scope already defines is refused with the reason \texttt{import-conflicts-with-definition}. The second is staleness. If a module is redeclared, the prototype refuses the old module sphere and its export spheres, and the importers, which hold spheres that depend on the old exports, keep the \texttt{import} spheres that they were given. Those spheres refer to the old definitions. The function \texttt{reload} redeclares a module from its current source text, and an importer sees the new definitions only when it is itself declared again and requires the module afresh. This is the same situation as an installed package whose dependency has been upgraded underneath it, and it returns in Chapter~10 with the version solver in the role of the party that decides whether the upgrade is allowed.
+
+\paragraph{Exercise 6.1.} Implement the \texttt{submod} form in its simplest version, a module declared inside another module, and decide what the \texttt{provide} of the inner module is allowed to refer to.
+
+\paragraph{Exercise 6.2.} Add cycle detection for \texttt{require}. A cycle should be a documented refusal that names the chain of modules. State whether the refused \texttt{module} sphere should remain declared.
+
+\paragraph{Exercise 6.3.} Write a test that declares module $A$, requires it from module $B$, replaces the source of $A$ with a different definition, calls \texttt{reload}, and checks that $B$ still sees the old definition until $B$ is declared again.
+
+\chapter{Domain-Specific Languages by Module Language and by Macro}
+
+\section{Two Mechanisms for One Goal}
+
+A domain-specific language in the Racket tradition is a way of letting a program say what it means in the vocabulary of its problem, and the tradition provides two mechanisms with different costs. The first is the \emph{module language}. A module declares its initial language, which determines the set of names that are in scope before the module body is read, so a module written in a DSL sees the DSL's versions of the standard operations. The second is the \emph{macro}, which adds syntax to an existing language by rewriting forms before evaluation. The \SP{} prototype implements both, and the point of this chapter is that the difference between them is visible in the ledger.
+
+\section{A DSL by Module Language}
+
+The module \texttt{saturating} defines arithmetic whose addition clamps at a ceiling and then provides it under the name \texttt{+}, together with the unchanged names of the base language that it wants to keep. The module \texttt{game} is declared in the \texttt{saturating} language. Its body is ordinary code that uses \texttt{+}, and because the initial import set of \texttt{game} is \texttt{saturating}, the \texttt{+} it sees is the clamping one. The transcript of the previous chapter shows the effect: the call \texttt{(score 60 30 20)} returns one hundred, while the same arithmetic in the ordinary language returns one hundred ten. The \texttt{game} module contains no import of the clamping addition and no renaming, and a reader who inspects it sees plain arithmetic.
+
+The ledger records the mechanism precisely. Each name that \texttt{game} received from \texttt{saturating} is a \texttt{langimport} sphere, and the query \texttt{where} distinguishes it from an explicit import: \texttt{where map} reports that the name came from the language \texttt{base}, and \texttt{where score} reports that it was imported from \texttt{game}. It is a small observation, and it is the content of the claim that a module language is an initial import set. The language of a module is not a separate concept in the prototype, it is a module whose exports are imported before the body is read. This is how Racket itself describes the relationship, and the prototype is a way of seeing that the description is not a metaphor.
+
+\section{A DSL by Macro}
+
+The module \texttt{fsm} provides the macro \texttt{define-fsm}, which accepts a name, an initial state, and a list of transition clauses, each naming a state, an event, and a next state, and which expands to a function that interprets the transition table. The macro uses a nested ellipsis, since each state has several event clauses. The module \texttt{traffic} requires \texttt{fsm} and uses the macro to declare a traffic light with states green, yellow, red, and flashing, and the transcript shows \texttt{run} applying a list of events and \texttt{light} applying a single event to a given state.
+
+The notation hides the table-walking code, and it can do so only because the macro is expanded before the evaluator sees the form. The ledger evidence is the line \texttt{imports of traffic: [('define-fsm', 'fsm')]}: the module \texttt{traffic} names exactly one import from \texttt{fsm}, and what it uses it for is the macro. Comparing the two mechanisms, the module-language DSL changes the meaning of existing names throughout the module and the macro DSL adds new names without changing the old ones. The first is the right tool when the domain is a variation of an existing semantics, such as saturating arithmetic. The second is right when the domain is a new syntax, such as a table of transitions. The first can surprise a reader who does not know the module's language, and the second can surprise a reader who does not know that the macro captures names, which is the limitation noted in Chapter~5.
+
+\section{Why This Is the Package-Index Question in Miniature}
+
+The question of how a DSL's functions reach the programs that use them is the question that every package index answers. A module is found by name in an index of sources, loaded, instantiated once, and its exports are placed in a scope under rules that govern conflicts, renames, and prefixes. The only features that a package manager adds to this picture are those of distribution: versions, constraints between modules, and a choice among several candidate providers of one name. Chapter~10 adds them to the prototype and wires the result into the \texttt{require} form of this chapter, so that a module can be found because a package was installed and not because a source file was placed in the index by hand.
+
+\paragraph{Exercise 7.1.} Write a module language in which \texttt{if} requires its condition to be a boolean and refuses otherwise. Decide whether the check is a property of the language module or of the evaluator, and state what the ledger shows in each case.
+
+\paragraph{Exercise 7.2.} Extend \texttt{define-fsm} to accept an optional accepting-state list and to produce a predicate that reports whether a run ends in an accepting state. Show that a state name chosen by the user can collide with a template temporary and fix the collision by renaming the temporary.
+
+\paragraph{Exercise 7.3.} Define a units module that provides \texttt{meters} and \texttt{feet} as functions and a conversion between them, require it with \texttt{prefix-in}, and write the call that distinguishes an import with a prefix from a name defined locally.
+
+\chapter{Commodore BASIC: A Program Store and a Disk}
+
+\section{The Machine Being Modeled}
+
+The BASIC of the Commodore home computers is an instructive target because its entire programming environment is a single interpreter with a program store, and nothing else stands between the user and the machine. A line that begins with a number is not executed, it is stored. A line that does not begin with a number is executed at once. The stored program is a sorted collection of numbered lines, \texttt{RUN} interprets it from the lowest line number, \texttt{LIST} prints it, and \texttt{LOAD} replaces it with the contents of a file read from a disk drive. Everything that distinguishes this system from a modern one follows from the fact that the program store is the same kind of thing as the program being run: text with line numbers, held in memory, edited in place.
+
+The prototype models the documented behavior of the Commodore interpreter \cite{c64prg} and not a particular machine. Variable names are significant to two characters, so \texttt{COUNT} and \texttt{COUNTER} name one variable. A string variable ends with a dollar sign and an integer variable with a percent sign. Positive numbers print with a leading space and a trailing space. Error messages are the interpreter's strings, with two spaces before the word \texttt{ERROR}, and an error in a running program stops the run and reports the line number. Subroutine return addresses and loop control records live on stacks that the interpreter manages, and a \texttt{RETURN} with no pending \texttt{GOSUB} is an error.
+
+\section{Lines as Spheres, Editing as Supersession}
+
+The program store is the family of live \texttt{line} spheres. A line has its number as key and its text as payload. Entering a line is the operation whose three cases are the editing semantics of the interpreter: an unseen number binds a new sphere, a number already in the store supersedes the old sphere with the new text, and a number with an empty body refuses the old sphere with the reason that it was deleted. The listing is the whole of the editor.
+
+\code{ex_basic_enter}
+
+Because editing is supersession, the history of a program is available. The old text of line 30 is not lost when the line is replaced, it remains in the ledger as a refused sphere with a successor that depends on it, and a debugger can reconstruct every version of the program that existed during a session. The original machine had no such facility. The prototype provides it as a consequence of the representation and not as a feature, which is the reason that the program store was chosen to be spheres.
+
+Variables follow the same rule. \texttt{put} binds a sphere for a variable that has not been assigned, and supersedes it when it has, with a type check against the suffix of the name. Arrays declared with \texttt{DIM} and the cells of \texttt{DATA} statements read by \texttt{READ} are spheres of their own tags, a data pointer is a sphere that is superseded on every read, and \texttt{PEEK} and \texttt{POKE} address a family of \texttt{mem} spheres by integer address.
+
+\section{Control Flow and the Interpreter Stacks}
+
+\texttt{GOSUB} binds a sphere holding the address to return to, and \texttt{RETURN} pops the most recent such sphere and resumes there. \texttt{FOR} binds a loop record with the variable, limit, step, and loop address, and \texttt{NEXT} supersedes the variable, tests the limit, and either jumps back or pops the record. A jump is itself recorded as a \texttt{jump} sphere, so the ledger of a run shows each transfer of control. The listing shows the subroutine call and return, which is the whole of the mechanism and fits in a few lines.
+
+\code{ex_basic_gosub}
+
+The transcript for the chapter lists a program, runs it, shows the directory, loads by wildcard, edits a line and runs again, and ends with the failure cases. The program computes a sum of squares with a \texttt{FOR} loop and a subroutine. After the run, the output \texttt{SUM = 55} shows the leading and trailing spaces of numeric output. The edit of line 30 to accumulate the index and not its square produces \texttt{SUM = 15} on the next run, and the old line is still in the ledger.
+
+\transcript{basic}
+
+\section{LOAD as the Central Operation}
+
+The disk is a family of \texttt{file} spheres keyed by device number and name, each holding the lines of a saved program. \texttt{SAVE} binds a file sphere from the current store. \texttt{LOAD} is the operation that makes the program store a loading language, and its three behaviors in the prototype are the three documented behaviors of the original. Loading a name looks for a file on the device, and a trailing asterisk matches by prefix and takes the first match in sorted name order. Loading the special name \texttt{\$} loads the directory itself as a program, so that \texttt{LIST} afterward prints the disk's contents in program form, with the first line giving the disk name and identifier and the remaining lines giving file sizes and names. Loading a name that does not exist is a documented refusal, the \texttt{FILE NOT FOUND} error, and loading from a device other than the one the prototype models is the \texttt{DEVICE NOT PRESENT} error.
+
+\code{ex_basic_load}
+
+Two properties of the listing are worth stating. The first is that loading refuses every live line of the current program with the reason that it was replaced by the load, then clears the variables, so that a loaded program starts in a fresh state, and each line bound from a file is coupled to the file sphere it came from. The lineage of a line therefore reaches the disk, and the question of where a line of the running program came from has an answer in the ledger. The second is that the directory and the program are the same kind of object. A program that is the listing of a disk is an ordinary stored program, and nothing in the prototype treats it specially except the step that generates its lines. This is the sense in which the interpreter is a loading language: names are resolved against a device, the result is installed into the one store the interpreter has, and the stored result is then both data and code.
+
+The comparison with the shells of the next chapter is the reason that this chapter precedes it. A shell resolves a name against a sequence of directories and installs the result into a process, and the interpreter resolves a name against a device and installs the result into a program store. The first has an ordered search and the second has a single device, but both are a lookup followed by an installation, and the prototype implements both as an ordered probe.
+
+\paragraph{Exercise 8.1.} Implement \texttt{VERIFY}, which compares the program in memory with a file and reports an error if they differ. Decide whether the comparison is a collapse rule, and decide what its recorded digest means.
+
+\paragraph{Exercise 8.2.} The interpreter stores a \texttt{GOSUB} return address as a line and statement position. Show that editing a line while a subroutine call is pending can make the return address refer to a statement that no longer exists, and propose a behavior that is consistent with the ledger.
+
+\paragraph{Exercise 8.3.} Implement the \texttt{ON} statement with a computed jump and verify that its jump spheres show only the transfer that was taken. State what the refused alternatives would be if the jump targets were bound as spheres before the choice.
+
+\chapter{Shells as Loading Languages}
+
+\section{What a Shell Does}
+
+A shell is a language whose principal operation is resolving a name to something runnable and then running it. The remainder of the language, such as variables, quoting, and redirection, is secondary to this operation in the sense that a shell with no variables is still a shell and a shell that cannot resolve names is not. The resolution is ordered. A name may denote an alias, a builtin command that the shell implements itself, a cached earlier result, or a file found by searching a list of directories, and the order in which these are tried is what makes two shells different languages. The prototype separates the mechanism, which is a search over an ordered list in which every probe is a recorded event, from the policy, which is the dialect's rule for which list to search and in what order. The search function is shared with the BASIC chapter and with the package-index chapter that follows. What is shared is a skeleton, an ordered probe with each miss refused and the hit committed, and not a semantics. The caching of a bash hash table, the wildcard matching of a BASIC load, the extension order of cmd, and the version constraints of a package index all live in the probe functions and in the code that calls the search, and the dialects differ precisely there.
+
+\code{ex_shell_resolve}
+
+Each probe is a sphere. A probe that misses is refused with the reason that the file is missing, a probe that finds a file that exists but cannot be run is refused with a reason that says so, and the probe that finds an executable is popped and returned. The ledger of a command is therefore a complete record of the places that were consulted and in what order, which is exactly the evidence that an administrator wants and the real system discards.
+
+\section{Bash: Alias, Builtin, Hash, Path}
+
+The documented order of command lookup in a Bourne-style shell \cite{bash-ref} is aliases, then the shell's builtins, then the table of previously found commands, then a search of the directories in the path variable. The prototype follows that order. Its first transcript shows the consequence of the table. The first run of \texttt{ls} probes six directories and finds the program in the sixth, and the second run of \texttt{ls} performs no probes at all, because the result of the first search was bound as a \texttt{hash} sphere. The command \texttt{hello}, installed in a directory that comes early in the path, is found after two probes. When the path variable is assigned, the prototype refuses every hash sphere with the reason that the path changed, and the next \texttt{hello} probes again from the front of the new path, which the transcript shows with a different first probe. This is the observable difference between a shell that caches lookups and one that does not, and it explains a familiar experience, in which a program that has been moved is still invoked from its old location until the shell is told to forget it.
+
+\transcript{shell}
+
+The commands \texttt{type} and \texttt{which} are included because they answer the same question with different authority, and the difference is a lesson in what a loading language owes its user. \texttt{type} is a builtin that runs the shell's own resolution and so reports aliases and builtins correctly, as the transcript shows for \texttt{cd} and an alias. \texttt{which} is an ordinary program that sees only the path and the file system, and so reports nothing for a builtin. The two disagree about \texttt{cd} in the transcript, with \texttt{type} reporting a builtin and \texttt{which} returning a nonzero status and no output, because they are implemented by different parties with access to different parts of the state.
+
+\section{Windows Command Interpreter}
+
+The Windows command interpreter has a different order and a different rule for what a name means. Its internal commands are tried first. For an external command, the interpreter searches the current directory and then each directory of the path variable, and within each directory it tries the name with each extension listed in the extension variable, in order. The default order places \texttt{.COM} before \texttt{.EXE}, then \texttt{.BAT} and \texttt{.CMD}. The names are compared without regard to case. A name that already has an extension is tried as written.
+
+The prototype implements this rule with the same search function, with the scopes being the pairs of directory and extension in the order the interpreter takes them. The first command in the cmd part of the transcript finds a batch file in the current directory after two misses, one for each earlier extension. The second command names something that does not exist and shows the whole search: the current directory and then two directories of the path, each with four extensions, twelve probes in all, ending in the status code that this interpreter uses for an unrecognized command. The transcript is the clearest demonstration of the sense in which a loading language is an ordered search, because the entire behavior of the command interpreter on an unknown name is visible as a list of what it tried.
+
+\section{WSL and the Two Namespaces}
+
+The Windows Subsystem for Linux places a Linux shell on a machine that also has a Windows file system, and its documented behavior is that the Windows path is appended to the Linux path with directory names translated to the mount point under which Windows drives appear. The prototype builds this as two namespaces in one world. A \texttt{win} namespace and a \texttt{linux} namespace each hold file spheres, the translation from a Windows directory to a mount path is a function on strings, and a WSL shell resolves names against the Linux path followed by the translated Windows path.
+
+The transcript shows the consequence. Running \texttt{notepad.exe} probes the six Linux directories and then finds the program under the mount of the Windows system directory. Running \texttt{notepad}, the bare name, searches the same seven directories and finds nothing, with the status that bash uses for command not found. This is a modeling decision stated plainly: the prototype matches names exactly, including the extension, because the documented behavior is that a Windows executable is invoked with its extension, and the prototype does not implement any extension inference on the Linux side. Real systems have configuration that can change the details, and a reader who needs a precise statement about a particular installation should read that installation and not the prototype.
+
+\section{Ubuntu and the Command-Not-Found Hook}
+
+Ubuntu's shell is bash with a distribution's choice of path and one addition that is relevant to this book. When a name is not found, the shell calls a handler that consults the distribution's package index, finds a package that provides a file of that name, and suggests installing it. The prototype supports this as a hook on the resolution failure. The hook receives the name and returns text or nothing, and the failed search is already complete in the ledger, probe by probe, before the hook is consulted. In Chapter~10 the hook is connected to the package index, so that a miss in the loading language becomes a question put to the package language, and the package language's answer is a message and not an action. The separation matters, because the shell is deliberately not allowed to install anything on its own.
+
+\section{BusyBox and the Multi-Call Binary}
+
+A BusyBox system implements a large set of small programs as applets of one executable. The executable determines which applet to run from the name it was invoked under, and the file system presents each applet as a link to the executable. The prototype models this directly. The machine contains one file, \texttt{busybox}, and a link for each applet in the same directory. Resolving \texttt{ls} finds the link, resolves the link to the executable, and passes the name \texttt{ls} as the program's first argument, and the program dispatches on that argument. The last line of the transcript reports that all six applets of the model resolve to the single executable. Invoking \texttt{busybox} with the name of an applet as its first argument is the same dispatch without the link, and invoking it with no argument lists the applets.
+
+The multi-call design is the cleanest example in the book of a loading language whose search is trivial and whose installation is interesting. The name does the work that a path search does elsewhere, because it has been moved from the path into the argument vector of a single program. For the purposes of the comparison in Chapter~12, a BusyBox system has the shallowest search of the shells in this chapter and the most indirection between name and code.
+
+\paragraph{Exercise 9.1.} Add the \texttt{hash -r} builtin to bash and a test that checks the next lookup probes again. Then add a hash table entry that goes stale because the file it names has been deleted, and determine what the shell should do when the cached file is missing.
+
+\paragraph{Exercise 9.2.} Implement an extension inference rule for WSL in which a bare name that is not found is retried with the Windows executable extension against the Windows part of the path only. Describe how the transcript of Section~9.4 changes and why the decision belongs to the dialect and not to the search function.
+
+\paragraph{Exercise 9.3.} Make cmd treat a name containing a backslash as a path and not as a name to search, and make a name that already contains an extension skip the extension list. Check the transcript's probe counts against your implementation.
+
+\chapter{Package Indexes and Search Paths}
+
+\section{Three Problems in One Word}
+
+The phrase package index covers three distinct problems \cite{cox19} that are usually solved by one tool, and the prototype separates them. The first is publication: an index holds, for each package name, a set of releases, and each release has a version, a list of constraints on other packages, and a set of artifacts such as modules. The second is resolution: given a request for some packages with constraints, choose a version of every package that is needed, so that every constraint is met. The third is lookup: given an installed set, decide where a name used in a program is found. Resolution is a computation about the future, and lookup is a computation about the present, and a package manager needs the first in order to guarantee the second.
+
+\section{Flat Resolution with Backtracking}
+
+The simplest resolution policy is flat. At most one version of each package is installed, so every constraint from every dependent applies to the single installed version. The prototype implements the flat solver as a depth-first search over the versions of each needed package, newest first. Each tentative choice is a \texttt{decision} sphere, coupled to the decision that required it. When a choice leads to a state in which a later constraint cannot be met, the search abandons it by refusing the decision sphere with the reason \texttt{backtrack}, and tries the next version. A failed resolution is a refused \texttt{attempt} sphere with the reason that it is unsatisfiable, together with an error.
+
+\code{ex_index_flat}
+
+The transcript for the chapter gives the diamond example. Packages \texttt{A} and \texttt{B} each depend on \texttt{C} with constraints that overlap on exactly one release, and the newest release of \texttt{C} satisfies one and not the other. The solver first selects the newest release of \texttt{C} and finds that it conflicts, backtracks, and arrives at the older release that both accept. The report shows two backtracked decisions. The next line is a request that pins \texttt{A} to a release that requires a version of \texttt{C} that \texttt{B} cannot accept, and it is refused with the message that no consistent set exists. Each refusal is a sphere, so the ledger answers the question of what was tried, in the order in which it was tried, which the error message of a conventional solver can only summarize.
+
+\section{Nested Resolution and Lexical Scope}
+
+The flat policy fails on the diamond whenever the constraints are incompatible. The alternative, used by some language ecosystems, is to allow several versions of one package in one installation, by giving each package its own private copy of the packages it depends on. The prototype implements this as nested resolution. Each requirement is resolved in the context of the package that made it, producing a \texttt{nested} sphere keyed by the path of ancestors and the name, and lookup of a name from inside a package searches the package's own scope and then each enclosing scope outward, which is the rule for resolving a variable in lexical scope.
+
+\code{ex_index_nested}
+
+In the transcript the request that the flat policy refused succeeds. Package \texttt{A} at its pinned release gets the release of \texttt{C} that it requires, package \texttt{B} gets a different release of \texttt{C}, and the lookup of \texttt{C} from \texttt{A} and from \texttt{B} returns two different versions. The price is visible in the same report, since the installation now contains two copies of \texttt{C}, and the question of what happens when objects created by one copy are passed to the other is the question that this policy leaves to the programmer. The comparison with flat resolution is the same as the comparison between dynamic scope with one global environment and lexical scope with nested environments. Flat resolution is simple to reason about and fails more often. Nested resolution succeeds more often and has no single answer to the question of which version is installed.
+
+\section{Uninstall, Upgrade, and Lock}
+
+An uninstall request is checked against the installed packages that depend on the target. If any does, the request is refused with the reason that names them, which the transcript shows for an attempt to remove \texttt{C} while \texttt{A} and \texttt{B} require it. An upgrade is a supersession: the old installed sphere is refused with the reason that it was upgraded, and the new release is bound with the old one as its dependency, so the history of a package is a lineage in the same sense as the history of a variable. A lock is a recorded collapse over the installed set. It produces a digest that identifies the exact versions, and a later check can compare the digest with the digest of the then-current set to detect drift. The lock is not a file the prototype writes, it is an event in the ledger.
+
+\section{The Search Path and the Connection to Racket}
+
+The third problem, lookup, is a search path. The prototype models the Racket collection search path as an ordered list of three scopes, a user scope, an installation scope, and the main distribution scope, and a module name is resolved by probing the scopes in order with the same search function used for shells. The transcript shows a module found in the user scope, which shadows a module of the same name in the installation scope, and another module found in the installation scope. Reassigning the path, which is a supersession of the \texttt{SearchPath} sphere, changes the answer for the same name without touching any package, and the transcript shows the first module found in the installation scope after the user scope is dropped from the list. Anyone who has debugged a program that imported the wrong version of a library because of a stale environment variable has met this behavior.
+
+The connection to the module system of Chapter~6 is made by the function \texttt{sync\_racket}. It reads the installed packages from the ledger, collects the module sources that each installed release carries, and adds them to the source index of a Racket world, which is the place a \texttt{require} looks when a module has not been declared. A module that was provided by a package that has since been removed is withdrawn from the index, with the reason that the package was removed. The effect is that installing a package makes its modules requirable, and removing it makes them unavailable, without any step in which a person places files in a directory.
+
+\code{ex_index_sync}
+
+This is the sense in which the prototype demonstrates what happens in a package index in a language ecosystem. The index resolves, the installed set records, the synchronization publishes the modules of the installed set into a source index, and the language's loader finds a module by name and loads it on first use, which is the behavior of Chapter~6. Each stage is a sphere-level operation, and the history of an import can be followed from the line that required it back to the release that provided it. The command-not-found hook of Chapter~9 uses the reverse of this path: given a missing name, the function \texttt{provider\_of\_file} finds the package whose release lists a file of that name in a standard directory, and the hook returns the text that proposes installing that package. The loading language, the package language, and the module language are three programs that consult one another through the ledger and share no private state.
+
+\paragraph{Exercise 10.1.} The flat solver chooses the newest satisfying version first. Change it to choose the oldest and describe a case in which the answer changes. Explain why the choice rule belongs to the policy and not to the search.
+
+\paragraph{Exercise 10.2.} Add a lock check that compares the digest of the current installed set with a stored digest and refuses the installation of anything that would change it. Decide whether the refusal reason should name the first package that differs.
+
+\paragraph{Exercise 10.3.} Implement a cycle in the nested solver, with package $P$ requiring $Q$ and $Q$ requiring $P$, and observe how the path-membership test terminates the recursion. State what lookup from inside $Q$ returns for $P$.

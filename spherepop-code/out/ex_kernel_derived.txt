@@ -1,0 +1,20 @@
+# derived forms
+def supersede(w, old, payload, reason="superseded"):
+    """Mutation as documented refusal of the old sphere plus a coupled new one."""
+    s = w.spheres[old]
+    w.refuse(old, reason)
+    return w.bind(s.tag, s.key, payload, (old,))
+
+
+def choose(w, taken, rejected, reason="not-taken"):
+    """Choice(A,B) = Pop(A) parallel Refuse(B)."""
+    w.pop(taken)
+    for r in rejected:
+        w.refuse(r, reason)
+
+
+def attempt_refused(w, tag, payload, reason):
+    """Documented refusal of an inadmissible proposal."""
+    i = w.bind(tag, None, payload)
+    w.refuse(i, reason)
+    return i

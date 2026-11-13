@@ -1,5 +1,9 @@
 # spherepop-kernel
 
+[Constructing Programming Languages from SpherePOP Primitives](https://standardgalactic.github.io/spherepop-kernel/spherepop-languages.pdf)
+
+* [Programming Languages Built on Indestructible Ledgers](https://standardgalactic.github.io/spherepop-kernel/)
+
 [Position Dependent Admissibility In Combinatory Reduction](https://standardgalactic.github.io/spherepop-kernel/position-dependent-admissibility.pdf)
 
 An independently executable reduction language in Go, built to be hosted inside a game but never to depend on one. The kernel reduces terms of the circle calculus: SK-style combinators extended with brackets and a scope constructor, where the permission to contract a term depends on the chain of brackets around it. Everything runs from the command line with no engine, graphics or network.

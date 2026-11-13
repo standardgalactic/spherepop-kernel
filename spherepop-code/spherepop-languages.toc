@@ -1,0 +1,111 @@
+\contentsline {chapter}{Preface}{1}{chapter*.2}%
+\contentsline {part}{I\hspace {1em}Foundations}{3}{part.1}%
+\contentsline {chapter}{\numberline {1}The Reference Kernel}{4}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Worlds, Spheres, and Four Primitives}{4}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Views and the Two Kinds of Collapse}{6}{section.1.2}%
+\contentsline {section}{\numberline {1.3}Four Laws}{6}{section.1.3}%
+\contentsline {section}{\numberline {1.4}Evidence and Acceptance}{8}{section.1.4}%
+\contentsline {section}{\numberline {1.5}Derived Forms}{8}{section.1.5}%
+\contentsline {section}{\numberline {1.6}Structural Vocabulary}{9}{section.1.6}%
+\contentsline {section}{\numberline {1.7}What the Model Leaves Out}{9}{section.1.7}%
+\contentsline {paragraph}{Exercise 1.1.}{10}{section*.3}%
+\contentsline {paragraph}{Exercise 1.2.}{10}{section*.4}%
+\contentsline {paragraph}{Exercise 1.3.}{10}{section*.5}%
+\contentsline {chapter}{\numberline {2}A Method for Reconstructing Languages}{11}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Five Decisions}{11}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Adequacy Is Relative to the Observation}{12}{section.2.2}%
+\contentsline {section}{\numberline {2.3}What the Ledger Can Answer}{12}{section.2.3}%
+\contentsline {section}{\numberline {2.4}The Cost of Keeping Everything}{12}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Tests as Part of the Text}{13}{section.2.5}%
+\contentsline {paragraph}{Exercise 2.1.}{13}{section*.6}%
+\contentsline {paragraph}{Exercise 2.2.}{13}{section*.7}%
+\contentsline {chapter}{\numberline {3}Register Transfers and the Clock Boundary}{14}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Register Transfers}{14}{section.3.1}%
+\contentsline {section}{\numberline {3.2}The Boundary in SpherePOP{}}{16}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Selection as Choice}{18}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Why This Chapter Precedes Forth}{19}{section.3.4}%
+\contentsline {paragraph}{Exercise 3.1.}{19}{section*.8}%
+\contentsline {paragraph}{Exercise 3.2.}{19}{section*.9}%
+\contentsline {paragraph}{Exercise 3.3.}{20}{section*.10}%
+\contentsline {part}{II\hspace {1em}Language Prototypes}{21}{part.2}%
+\contentsline {chapter}{\numberline {4}Forth: Programs as Histories of a Stack}{22}{chapter.4}%
+\contentsline {section}{\numberline {4.1}The Instruction Boundary}{22}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Operand Order and the Identity of a Copy}{22}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Control as Choice, Calls as Frames}{24}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Definitions, Shadowing, and When Names Are Resolved}{25}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Errors as Documented Refusals}{25}{section.4.5}%
+\contentsline {section}{\numberline {4.6}Adequacy at the Instruction Boundary}{26}{section.4.6}%
+\contentsline {paragraph}{Exercise 4.1.}{26}{section*.11}%
+\contentsline {paragraph}{Exercise 4.2.}{26}{section*.12}%
+\contentsline {paragraph}{Exercise 4.3.}{27}{section*.13}%
+\contentsline {chapter}{\numberline {5}A Lisp Core: Environments, Closures, and Tail Calls}{28}{chapter.5}%
+\contentsline {section}{\numberline {5.1}What Must Be Reconstructed}{28}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Environments and Mutation by Supersession}{28}{section.5.2}%
+\contentsline {section}{\numberline {5.3}The Evaluator and Tail Calls}{30}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Macros as Ledger Rewriting}{31}{section.5.4}%
+\contentsline {section}{\numberline {5.5}A Prelude Written in the Language}{32}{section.5.5}%
+\contentsline {paragraph}{Exercise 5.1.}{32}{section*.14}%
+\contentsline {paragraph}{Exercise 5.2.}{32}{section*.15}%
+\contentsline {paragraph}{Exercise 5.3.}{33}{section*.16}%
+\contentsline {chapter}{\numberline {6}A Racket Layer: Modules, Provision, and Requirement}{34}{chapter.6}%
+\contentsline {section}{\numberline {6.1}From a Language to a Language of Modules}{34}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Declaration, Instantiation, and Lazy Loading}{34}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Conflicts and Staleness}{37}{section.6.3}%
+\contentsline {paragraph}{Exercise 6.1.}{37}{section*.17}%
+\contentsline {paragraph}{Exercise 6.2.}{37}{section*.18}%
+\contentsline {paragraph}{Exercise 6.3.}{37}{section*.19}%
+\contentsline {chapter}{\numberline {7}Domain-Specific Languages by Module Language and by Macro}{38}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Two Mechanisms for One Goal}{38}{section.7.1}%
+\contentsline {section}{\numberline {7.2}A DSL by Module Language}{38}{section.7.2}%
+\contentsline {section}{\numberline {7.3}A DSL by Macro}{39}{section.7.3}%
+\contentsline {section}{\numberline {7.4}Why This Is the Package-Index Question in Miniature}{39}{section.7.4}%
+\contentsline {paragraph}{Exercise 7.1.}{39}{section*.20}%
+\contentsline {paragraph}{Exercise 7.2.}{39}{section*.21}%
+\contentsline {paragraph}{Exercise 7.3.}{40}{section*.22}%
+\contentsline {chapter}{\numberline {8}Commodore BASIC: A Program Store and a Disk}{41}{chapter.8}%
+\contentsline {section}{\numberline {8.1}The Machine Being Modeled}{41}{section.8.1}%
+\contentsline {section}{\numberline {8.2}Lines as Spheres, Editing as Supersession}{41}{section.8.2}%
+\contentsline {section}{\numberline {8.3}Control Flow and the Interpreter Stacks}{42}{section.8.3}%
+\contentsline {section}{\numberline {8.4}LOAD as the Central Operation}{43}{section.8.4}%
+\contentsline {paragraph}{Exercise 8.1.}{44}{section*.23}%
+\contentsline {paragraph}{Exercise 8.2.}{44}{section*.24}%
+\contentsline {paragraph}{Exercise 8.3.}{45}{section*.25}%
+\contentsline {chapter}{\numberline {9}Shells as Loading Languages}{46}{chapter.9}%
+\contentsline {section}{\numberline {9.1}What a Shell Does}{46}{section.9.1}%
+\contentsline {section}{\numberline {9.2}Bash: Alias, Builtin, Hash, Path}{47}{section.9.2}%
+\contentsline {section}{\numberline {9.3}Windows Command Interpreter}{49}{section.9.3}%
+\contentsline {section}{\numberline {9.4}WSL and the Two Namespaces}{49}{section.9.4}%
+\contentsline {section}{\numberline {9.5}Ubuntu and the Command-Not-Found Hook}{50}{section.9.5}%
+\contentsline {section}{\numberline {9.6}BusyBox and the Multi-Call Binary}{50}{section.9.6}%
+\contentsline {paragraph}{Exercise 9.1.}{50}{section*.26}%
+\contentsline {paragraph}{Exercise 9.2.}{50}{section*.27}%
+\contentsline {paragraph}{Exercise 9.3.}{50}{section*.28}%
+\contentsline {chapter}{\numberline {10}Package Indexes and Search Paths}{52}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Three Problems in One Word}{52}{section.10.1}%
+\contentsline {section}{\numberline {10.2}Flat Resolution with Backtracking}{52}{section.10.2}%
+\contentsline {section}{\numberline {10.3}Nested Resolution and Lexical Scope}{53}{section.10.3}%
+\contentsline {section}{\numberline {10.4}Uninstall, Upgrade, and Lock}{54}{section.10.4}%
+\contentsline {section}{\numberline {10.5}The Search Path and the Connection to Racket}{55}{section.10.5}%
+\contentsline {paragraph}{Exercise 10.1.}{56}{section*.29}%
+\contentsline {paragraph}{Exercise 10.2.}{56}{section*.30}%
+\contentsline {paragraph}{Exercise 10.3.}{56}{section*.31}%
+\contentsline {part}{III\hspace {1em}Composition}{57}{part.3}%
+\contentsline {chapter}{\numberline {11}Composing Languages in One Ledger}{58}{chapter.11}%
+\contentsline {section}{\numberline {11.1}The Claim}{58}{section.11.1}%
+\contentsline {section}{\numberline {11.2}A Collision the Test Found}{58}{section.11.2}%
+\contentsline {section}{\numberline {11.3}Values Across Languages}{59}{section.11.3}%
+\contentsline {section}{\numberline {11.4}What Composition Does Not Show}{59}{section.11.4}%
+\contentsline {paragraph}{Exercise 11.1.}{60}{section*.32}%
+\contentsline {paragraph}{Exercise 11.2.}{60}{section*.33}%
+\contentsline {paragraph}{Exercise 11.3.}{60}{section*.34}%
+\contentsline {chapter}{\numberline {12}Comparative Structural Analysis and Open Problems}{61}{chapter.12}%
+\contentsline {section}{\numberline {12.1}A Measured Profile}{61}{section.12.1}%
+\contentsline {section}{\numberline {12.2}Weakening, Contraction, and Exchange}{62}{section.12.2}%
+\contentsline {section}{\numberline {12.3}The Cost of History}{62}{section.12.3}%
+\contentsline {section}{\numberline {12.4}What Has and Has Not Been Shown}{63}{section.12.4}%
+\contentsline {section}{\numberline {12.5}Open Problems}{63}{section.12.5}%
+\contentsline {paragraph}{Exercise 12.1.}{64}{section*.35}%
+\contentsline {paragraph}{Exercise 12.2.}{64}{section*.36}%
+\contentsline {paragraph}{Exercise 12.3.}{64}{section*.37}%
+\contentsline {chapter}{\numberline {A}The Reference Kernel and the Search Function}{65}{appendix.A}%
+\contentsline {chapter}{\numberline {B}Reproducing the Results}{70}{appendix.B}%

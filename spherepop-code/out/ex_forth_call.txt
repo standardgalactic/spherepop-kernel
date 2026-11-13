@@ -1,0 +1,17 @@
+def call(self, name):
+    w = self.w
+    wid = w.view.last_key("word", name)
+    if name == "recurse":
+        f = w.view.last("frame")
+        if f is None:
+            self.fault(name, "outside-definition")
+        wid = w.spheres[f].deps[0]
+    if wid is not None:
+        self.call_word(wid)
+    elif w.view.last_key("forth.var", name) is not None:
+        self.push(("addr", name), "addr")
+    elif w.view.last_key("const", name) is not None:
+        c = w.view.last_key("const", name)
+        self.push(w.spheres[c].payload, "const", (c,))
+    else:
+        self.builtin(name)

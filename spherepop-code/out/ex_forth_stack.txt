@@ -1,0 +1,31 @@
+elif name == "dup":
+    self.need(1, name)
+    t = v.last("cell"); self.push(v.payload(t), "dup", (t,))
+elif name == "?dup":
+    self.need(1, name)
+    t = v.last("cell")
+    if v.payload(t) != 0:
+        self.push(v.payload(t), "dup", (t,))
+elif name == "drop":
+    self.need(1, name); w.refuse(v.last("cell"), "drop")
+elif name == "nip":
+    self.need(2, name); w.refuse(v.live("cell")[-2], "nip")
+elif name == "swap":
+    self.need(2, name)
+    b, bi = self.pop1(); a, ai = self.pop1()
+    self.push(b, "swap", (bi,)); self.push(a, "swap", (ai,))
+elif name == "over":
+    self.need(2, name)
+    s = v.live("cell")[-2]; self.push(v.payload(s), "over", (s,))
+elif name == "rot":
+    self.need(3, name)
+    c, ci = self.pop1(); b, bi = self.pop1(); a, ai = self.pop1()
+    self.push(b, "rot", (bi,)); self.push(c, "rot", (ci,)); self.push(a, "rot", (ai,))
+elif name == "-rot":
+    self.need(3, name)
+    c, ci = self.pop1(); b, bi = self.pop1(); a, ai = self.pop1()
+    self.push(c, "rot", (ci,)); self.push(a, "rot", (ai,)); self.push(b, "rot", (bi,))
+elif name == "tuck":
+    self.need(2, name)
+    b, bi = self.pop1(); a, ai = self.pop1()
+    self.push(b, "tuck", (bi,)); self.push(a, "tuck", (ai,)); self.push(b, "tuck", (bi,))

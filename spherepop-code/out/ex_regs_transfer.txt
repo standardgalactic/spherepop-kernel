@@ -1,0 +1,17 @@
+def clock(self, sources, controls):
+    w = self.w
+    if len(sources) != len(controls):
+        raise ValueError("one control per source")
+    if sum(controls) > 1:
+        attempt_refused(w, "attempt", tuple(controls), "multiple-select")
+        raise ControlError("more than one source-select asserted: %r" % (tuple(controls),))
+    if not any(controls):
+        return self.value()          # Load = OR(K) = 0: hold
+    cands = [w.bind("candidate", k, s, (self.r,)) for k, s in enumerate(sources)]
+    k = controls.index(1)
+    choose(w, cands[k], [c for j, c in enumerate(cands) if j != k], "not-selected")
+    new = w.bind("reg", 0, w.spheres[cands[k]].payload, (cands[k],))
+    w.refuse(self.r, "loaded")
+    self.r = new
+    w.collapse(lambda v: v.payload(v.last_key("reg", 0)), "R0")
+    return self.value()

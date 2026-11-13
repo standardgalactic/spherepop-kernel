@@ -1,0 +1,32 @@
+def define(self, env, name, value):
+    v = self.w.view
+    if v.last_key("import", (env, name)) is not None:
+        self.err("define: identifier already imported: %s" % name, "already-imported")
+    i = v.last_key("binding", (env, name))
+    if i is not None:
+        return supersede(self.w, i, value)
+    return self.w.bind("binding", (env, name), value, (env,))
+
+def set_bang(self, env, name, value):
+    o = self.owner(env, name)
+    if o is None:
+        self.err("set!: unbound identifier: %s" % name, "unbound")
+    if o[1] != "binding":
+        self.err("set!: cannot mutate imported identifier: %s" % name, "immutable-import")
+    return supersede(self.w, o[2], value, "set!")
+
+def lineage(self, env, name):
+    """Values of a mutable binding, oldest first, from its supersession chain."""
+    o = self.owner(env, name)
+    out, i = [], o[2]
+    while True:
+        s = self.w.spheres[i]
+        out.append(s.payload)
+        if s.deps and self.w.spheres[s.deps[0]].tag == "binding" and self.w.spheres[s.deps[0]].key == s.key:
+            i = s.deps[0]
+        else:
+            break
+    return out[::-1]
+
+def make_closure(self, params, body, env):
+    return Closure(self.w.bind("lambda", None, (params, body), (env,)))

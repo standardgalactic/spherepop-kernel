@@ -1,0 +1,55 @@
+bash> ls   (status 0)
+    probe /usr/local/sbin/ls                       miss
+    probe /usr/local/bin/ls                        miss
+    probe /usr/sbin/ls                             miss
+    probe /usr/bin/ls                              miss
+    probe /sbin/ls                                 miss
+    probe /bin/ls                                  HIT
+bash> ls   (status 0)
+bash> hello   (status 0)
+    probe /usr/local/sbin/hello                    miss
+    probe /usr/local/bin/hello                     HIT
+bash> export PATH=/bin:/usr/local/bin   (status 0)
+bash> hello   (status 0)
+    probe /bin/hello                               miss
+    probe /usr/local/bin/hello                     HIT
+cmd > hello   (status 0)
+    probe C:\Users\me\hello.COM                    miss
+    probe C:\Users\me\hello.EXE                    miss
+    probe C:\Users\me\hello.BAT                    HIT
+cmd > nosuch   (status 9009)
+    probe C:\Users\me\nosuch.COM                   miss
+    probe C:\Users\me\nosuch.EXE                   miss
+    probe C:\Users\me\nosuch.BAT                   miss
+    probe C:\Users\me\nosuch.CMD                   miss
+    probe C:\Windows\System32\nosuch.COM           miss
+    probe C:\Windows\System32\nosuch.EXE           miss
+    probe C:\Windows\System32\nosuch.BAT           miss
+    probe C:\Windows\System32\nosuch.CMD           miss
+    probe C:\Windows\nosuch.COM                    miss
+    probe C:\Windows\nosuch.EXE                    miss
+    probe C:\Windows\nosuch.BAT                    miss
+    probe C:\Windows\nosuch.CMD                    miss
+wsl > notepad.exe   (status 0)
+    probe /usr/local/sbin/notepad.exe              miss
+    probe /usr/local/bin/notepad.exe               miss
+    probe /usr/sbin/notepad.exe                    miss
+    probe /usr/bin/notepad.exe                     miss
+    probe /sbin/notepad.exe                        miss
+    probe /bin/notepad.exe                         miss
+    probe /mnt/c/Windows/System32/notepad.exe      HIT
+wsl > notepad   (status 127)
+    probe /usr/local/sbin/notepad                  miss
+    probe /usr/local/bin/notepad                   miss
+    probe /usr/sbin/notepad                        miss
+    probe /usr/bin/notepad                         miss
+    probe /sbin/notepad                            miss
+    probe /bin/notepad                             miss
+    probe /mnt/c/Windows/System32/notepad          miss
+
+type and which on bash:
+    type cd   (status 0)  cd is a shell builtin
+    alias ll='ls'   (status 0)  
+    type ll   (status 0)  ll is aliased to `ls'
+    which cd   (status 1)  
+busybox: applets cat echo false ls true uname ; links resolving to /bin/busybox: 6 of 6

@@ -1,0 +1,18 @@
+args = [self.eval(a, env) for a in x[1:]]
+if isinstance(f, Closure):
+    if couplings:
+        w.pop(couplings.pop())
+    params, body = w.spheres[f.id].payload
+    cenv = w.spheres[f.id].deps[0]
+    call = w.bind("call", None, len(args), (f.id,))
+    couplings.append(call)
+    env = self.new_env(cenv, (call,))
+    if isinstance(params, Sym):
+        w.bind("binding", (env, str(params)), tuple(args), (env, call))
+    else:
+        if len(params) != len(args):
+            self.err("arity mismatch: expected %d, given %d" % (len(params), len(args)), "arity")
+        for p, a in zip(params, args):
+            w.bind("binding", (env, str(p)), a, (env, call))
+    x = self._body(body, env)
+    continue

@@ -1,0 +1,15 @@
+def edge(self, b):
+    """One clock edge. Every stage samples the same pre-edge word."""
+    w, v = self.w, self.w.view
+    old_ids = [v.last_key("stage", k) for k in range(self.n)]
+    old = [v.payload(i) for i in old_ids]
+    inp = w.bind("input", None, b)
+    w.bind("shifted-out", None, old[-1], (old_ids[-1],))
+    for i in old_ids:
+        w.pop(i)
+    for k in range(self.n):
+        src = inp if k == 0 else old_ids[k - 1]
+        w.bind("stage", k, b if k == 0 else old[k - 1], (src,))
+    w.pop(inp)
+    w.collapse(word_rule, "word")
+    return self

@@ -1,0 +1,8 @@
+elif k == "if":
+    self.need(1, "if")
+    flag, fid = self.pop1()
+    a = w.bind("branch", "then", it[1], (fid,))
+    b = w.bind("branch", "else", it[2], (fid,))
+    taken, other = (a, b) if flag != 0 else (b, a)
+    choose(w, taken, [other])
+    self.run_items(w.spheres[taken].payload)

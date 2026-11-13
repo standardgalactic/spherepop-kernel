@@ -1,0 +1,7 @@
+flat   install A *, B *            -> {'A': '1.0.0', 'B': '1.0.0', 'C': '1.5.0'}   (decisions backtracked: 2)
+flat   install A ==2.0.0, B *     -> refused: no consistent set of versions for {'A': '==2.0.0', 'B': '*'}
+nested install A ==2.0.0, B *     -> A=2.0.0; B=1.0.0; A@2.0.0:C=2.0.0; B@1.0.0:C=1.5.0
+nested lookup of C from A@2.0.0: 2.0.0 ; from B@1.0.0: 1.5.0
+uninstall C -> refused: C is required by A, B
+search path user,install,main: fsm found in user ; units in install
+after reassigning the path: fsm found in install

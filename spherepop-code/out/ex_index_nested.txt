@@ -1,0 +1,21 @@
+def solve_nested(self, reqs, path=()):
+    w, out = self.w, {}
+    for name, spec in reqs.items():
+        ver = next((x for x in self.releases(name) if satisfies(x, spec)), None)
+        if ver is None:
+            attempt_refused(w, "attempt", (name, spec), "unsatisfiable")
+            raise ResolutionError("no version of %s satisfies %s" % (name, spec))
+        w.bind("nested", (path, name), ver)
+        out[(path, name)] = ver
+        tag = "%s@%s" % (name, ver)
+        if tag not in path:
+            out.update(self.solve_nested(dict(self.release(name, ver)[0]), path + (tag,)))
+    return out
+
+def node_lookup(self, frm, name):
+    v = self.w.view
+    for k in range(len(frm), -1, -1):
+        i = v.last_key("nested", (frm[:k], name))
+        if i is not None:
+            return v.payload(i)
+    return None

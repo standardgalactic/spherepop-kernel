@@ -1,0 +1,23 @@
+def _find(self, name):
+    v = self.w.view
+    m = v.last_key("module", name)
+    if m is None:
+        s = v.last_key("source", name)
+        if s is None:
+            self.err("cannot open module: %s" % name, "cannot-open-module")
+        self.run(self.w.spheres[s].payload, env=self.top)
+        m = v.last_key("module", name)
+        if m is None:
+            self.err("module %s was not declared by its source" % name, "bad-module-source")
+    return m
+
+def where(self, name, env=None):
+    env = self.top if env is None else env
+    o = self.owner(env, name)
+    if o is None:
+        return None
+    e, tag, i = o
+    if tag == "binding":
+        return ("defined", None)
+    exp = self.w.spheres[self.w.spheres[i].deps[0]]
+    return ("imported" if tag == "import" else "language", exp.key[0])

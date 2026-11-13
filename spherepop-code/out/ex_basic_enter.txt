@@ -1,0 +1,24 @@
+def enter(self, text):
+    text = text.strip()
+    m = re.match(r"(\d+)\s*(.*)$", text)
+    v = self.w.view
+    if not m:
+        return self.direct(text)
+    n, body = int(m.group(1)), m.group(2)
+    old = v.last_key("line", n)
+    if not body:
+        if old is not None:
+            self.w.refuse(old, "deleted")
+    elif old is not None:
+        supersede(self.w, old, body, "replaced")
+    else:
+        self.w.bind("line", n, body)
+
+def put(self, key, val, line=None):
+    if key.endswith("$") != isinstance(val, str):
+        self.fail("type", line)
+    i = self.w.view.last_key("basic.var", key)
+    if i is None:
+        self.w.bind("basic.var", key, val)
+    else:
+        supersede(self.w, i, val)

@@ -1,0 +1,17 @@
+def load(self, rest, line):
+    m = re.match(r'"([^"]*)"\s*(?:,\s*(\d+))?', rest)
+    name, dev = m.group(1), int(m.group(2) or 1)
+    if dev != self.device: self.fail("device", line)
+    v = self.w.view
+    for i in v.live("line"): self.w.refuse(i, "replaced by LOAD")
+    self.clear("LOAD")
+    if name == "$":
+        for n, t in self.directory(dev): self.w.bind("line", n, t)
+        return
+    pat = name.replace("*", "")
+    cands = sorted(v.sphere(i).key[1] for i in v.live("file") if v.sphere(i).key[0] == dev)
+    hit = next((c for c in cands if (c == name if "*" not in name else c.startswith(pat))), None)
+    if hit is None: self.fail("notfound", line)
+    fid = v.last_key("file", (dev, hit))
+    for n, t in v.payload(fid):
+        self.w.bind("line", n, t, (fid,))

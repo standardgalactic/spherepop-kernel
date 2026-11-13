@@ -1,0 +1,127 @@
+\part{Foundations}
+
+\chapter{The Reference Kernel}
+
+\section{Worlds, Spheres, and Four Primitives}
+
+The kernel used throughout this book is a concrete model of four primitives. It is one model among several that satisfy the same laws, and it is chosen because it is small enough to read in full (Appendix~A lists it) while being strict enough that a prototype cannot cheat. A \emph{world} is a pair $(H,\Omega)$. The history $H$ is an append-only sequence of events, and $\Omega$ is the family of spheres that are currently live. A \emph{sphere} is an immutable record of a birth: an integer identity, a tag naming its kind, a key used for lookup, a payload, and a tuple of dependencies, which are earlier spheres that the new sphere is coupled to. A sphere is always in exactly one of three states, live, popped, or refused, and the transition out of the live state is irreversible.
+
+\begin{definition}[Primitives]
+Let $w=(H,\Omega)$ be a world. $\Bind(\tau,k,p,D)$ appends a birth event and adds a new live sphere with tag $\tau$, key $k$, payload $p$, and dependencies $D$, provided every member of $D$ was born earlier; it consumes nothing. $\Pop(s)$ appends a pop event and removes the live sphere $s$ from $\Omega$, committing it; it is admissible only if $s$ is live. $\Refuse(s,r)$ appends a refusal event and removes the live sphere $s$ from $\Omega$ while recording a nonempty reason $r$; the sphere and its payload remain in $H$. $\Collapse(\rho)$ evaluates a rule $\rho$ on a read-only view of $w$ and appends a record containing the rule's name and a digest of the value it returned; it changes no sphere.
+\end{definition}
+
+The sentence that introduces a sphere deserves care, because earlier drafts of the \SP{} literature used the word pop for object introduction. In this kernel, introduction is a $\Bind$ into an open scope, which is the canonical encoding of abstraction, $\mathrm{Sphere}:=\Bind(x,\Omega)$. $\Pop$ is reserved for commitment of something already introduced. The distinction matters in every chapter that follows: a Forth literal, a Lisp binding, a BASIC program line, and a shell file are all introduced by $\Bind$, and what happens to them afterward is a question of which of the other three primitives acts on them.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llll}
+\toprule
+Primitive & Admissible when & Effect on $\Omega$ & Appended to $H$\\
+\midrule
+$\Bind$ & dependencies are born & one live sphere added & birth with payload\\
+$\Pop$ & sphere is live & one live sphere removed & commitment\\
+$\Refuse$ & sphere is live, reason nonempty & one live sphere removed & exclusion with reason\\
+$\Collapse$ & always & none & rule name and digest\\
+\bottomrule
+\end{tabular}
+\caption{The four primitives of the reference kernel.}
+\end{table}
+
+The primitives and their admissibility test are short enough to quote.
+
+\code{ex_kernel_prims}
+\code{ex_kernel_commit}
+
+\section{Views and the Two Kinds of Collapse}
+
+State is never stored beside the ledger. Everything a language wants to know about its own state is obtained through a \emph{view}, a read-only projection that offers the live spheres of a tag, the latest live sphere with a given key, counts, payloads, and the transitive dependencies of a sphere. A view is the pure part of $\Collapse$. The kernel distinguishes two uses. Reading through a view in the middle of a step is unrecorded, because it belongs to the step that performs it. Committing an observation, such as the stack at the end of a Forth line or the variables at the end of a BASIC run, is a recorded $\Collapse$ that leaves a digest in the ledger. This is a modeling choice, and it has a cost and a benefit. Recording every read would make the ledger several times longer without adding information that replay does not already supply; recording commitments gives later checkers a place to compare the value a run reported against the value that replay reconstructs.
+
+\section{Four Laws}
+
+\begin{proposition}[History grows]\label{prop:grow}
+Every primitive appends exactly one event to $H$. No event is ever modified or removed.
+\end{proposition}
+
+\begin{proof}
+Each primitive calls the single commit routine, which validates the proposed event and then appends it. The ledger is only ever extended by that routine, and the sphere records are immutable. Hence the length of $H$ increases by one with each successful primitive.
+\end{proof}
+
+\begin{proposition}[Live accounting]\label{prop:live}
+Let $\phi(w)$ be the number of live spheres of $w$. Then $\Bind$ increases $\phi$ by one, $\Pop$ and $\Refuse$ each decrease it by one, and $\Collapse$ leaves it unchanged.
+\end{proposition}
+
+\begin{proof}
+Immediate from the table above. The indexes that answer view queries are updated by the same routine that appends the event, and each update adds or removes exactly the one sphere the event names.
+\end{proof}
+
+\begin{proposition}[Replay faithfulness]\label{prop:replay}
+Let $w$ be a world with ledger $H$ and let $w'$ be obtained by committing the events of $H$, in order, to an empty world. Then $w'$ has the same sphere statuses, the same refusal reasons, and the same live indexes as $w$. If a recorded $\Collapse$ names a rule available to the checker, then the rule evaluated on the replayed prefix reproduces the recorded digest.
+\end{proposition}
+
+\begin{proof}
+By induction on the length of $H$. The empty ledger yields the empty world. Suppose the claim holds for a prefix. The next event is admissible in $w$, because it was committed there, and the admissibility test depends only on the statuses and births recorded in the prefix, which agree by hypothesis. The state transition performed for an event is a function of the event and the prefix state alone. Hence the two worlds agree after the event. For a $\Collapse$ event, the view available to the rule is a function of the prefix state, which agrees, so the digest agrees.
+\end{proof}
+
+\begin{proposition}[Independent events commute]\label{prop:commute}
+If two events name disjoint spheres, then committing them in either order yields worlds that agree on every sphere status and on every live index up to the order of insertion.
+\end{proposition}
+
+\begin{proof}
+An event changes the status of exactly the spheres it names and updates the indexes entries of those spheres only. When the named sets are disjoint, the two updates touch different entries, and admissibility of each is unaffected by the other.
+\end{proof}
+
+Proposition~\ref{prop:commute} is the content of the parallel composition $\Pop(A)\parallel\Refuse(B)$ used for choice below. It does not say that the two ledgers are equal, since events appear in different orders, and the kernel does not pretend otherwise. The ledger digest of a world is a hash chain over the events in order, so reordering changes it, and a checker that wishes to identify the two runs must compare projections, not chains.
+
+\code{ex_kernel_replay}
+
+\section{Evidence and Acceptance}
+
+A run produces two things, a result and a ledger, and a consumer should be able to accept a result without trusting the process that produced it. The kernel supports this separation. The \emph{chain} of a world is a hash chain over its events. \texttt{verify} replays the ledger into a fresh world, compares the statuses, reasons, and indexes with those of the original, and optionally compares the chain with an expected value and recomputes recorded collapses with supplied rules. If any event of a stored ledger is altered, the chain changes and the comparison fails, and if the altered ledger is replayed without the expected chain, replay may still succeed and produce a different world, which is why the expected chain is part of the acceptance test and not an optional extra. Matching final answers do not establish validity: two different ledgers can end in the same observable, and the tests in this book exercise exactly that situation.
+
+\section{Derived Forms}
+
+Four small functions recur in every prototype. Supersession realizes mutation: the old sphere is refused with a reason and a new sphere with the same tag and key is bound with the old one as its dependency, so that the lineage of a mutable cell is the chain of its dependencies and no past value is lost. Choice realizes $\Pop(A)\parallel\Refuse(B)$, in which the taken branch is committed and every rejected branch is refused with a recorded reason. A documented refusal of an inadmissible proposal binds an attempt sphere and refuses it immediately, so that an error leaves a trace of what was tried and why it was turned away. Application is $\Collapse_\rho(\Bind(f,x))$: a coupling of function and argument, followed by a rule that reads both.
+
+\code{ex_kernel_derived}
+
+\section{Structural Vocabulary}
+
+The primitives suggest a reading of the structural rules of substructural logic that the later chapters use as an audit device. A $\Refuse$ of a value that was introduced but never used is a weakening, because something that entered the world is discarded without contributing to a result. A $\Bind$ that couples a new sphere to an existing one while leaving the existing one live is a contraction when two later spheres depend on the same source, since the source is used twice. A reordering of live spheres is an exchange. The vocabulary is used descriptively in this book. Which operations of a language weaken, contract, or exchange is a fact about its prototype that can be counted in the ledger, and Chapter~12 reports such counts. Whether a given fragment satisfies a precise substructural discipline is a theorem that belongs to the calculus and not to the prototype; the essays on scoped structural rules and on duplication and universality \cite{flyxion-scoped,flyxion-duplication} develop that side.
+
+\section{What the Model Leaves Out}
+
+Three simplifications deserve statement. First, $\Bind$ here introduces a sphere, whereas in the abstract calculus it is an endomorphism that narrows an admissible family; the dependency tuple carried by each sphere is the concrete stand-in for that narrowing, and no prototype relies on more. Second, identity is by integer, and the kernel has no notion of a scope boundary beyond the tags that languages choose; Chapter~11 shows why tags must therefore be namespaced by language. Third, nothing is collected: refused and popped spheres remain in the ledger forever, and live spheres that have become unreachable stay live unless a language refuses them explicitly. The price of keeping every execution distinguishable is memory, and Chapter~12 measures it.
+
+\paragraph{Exercise 1.1.} Add a gate to the world, a function that sees a proposed event and returns allow or a reason for refusal, and route every commit through it. Decide whether a refused proposal should itself be recorded and what the recorded form is.
+
+\paragraph{Exercise 1.2.} Prove that if a ledger is replayed with an event inserted at the front that names no existing sphere, the replayed statuses of all later events are unchanged except for the renumbering of sphere identities. State what must be assumed about how the kernel assigns identities.
+
+\paragraph{Exercise 1.3.} Show that Proposition~\ref{prop:commute} fails if two events name the same sphere, and give the smallest example.
+
+\chapter{A Method for Reconstructing Languages}
+
+\section{Five Decisions}
+
+Every prototype in this book is built by the same five decisions, taken in order. The first fixes the state of the source machine and assigns each component a sphere tag, namespaced by the language so that two languages sharing a ledger cannot collide. The second names the observables, which are the quantities an outside party may read when a step completes, and writes each as a collapse rule, a pure function of a view. The third defines each operation of the language as a composition of the four primitives, together with the condition under which it is admissible. The fourth specifies what happens when the condition fails: the operation is refused, the refusal is documented with a reason, and the interpreter cleans up the partial state it created by refusing it in turn. The fifth states and tests adequacy.
+
+\begin{definition}[Observation boundary]
+An \emph{observation boundary} of a source machine is a point at which the machine's state is considered complete and may be read: the end of a Forth word, a clock edge of a register, the end of a Lisp form, the end of a BASIC statement, the end of a shell command. A reconstruction is \emph{adequate at a boundary} when a projection $\pi$ of the \SP{} history to the boundary yields the source machine's state at that boundary.
+\end{definition}
+
+The central invariant of every chapter has the same form. If $S_i$ is the source state after $i$ completed steps, $H_i$ is the history after the same steps, and $\pi$ is the projection that reads the observables, then $\pi(H_i)=S_i$ for every $i$. The invariant is checked in two ways. The first compares the running prototype with an independent reference implementation of the same source semantics, written separately and as plainly as possible, over many programs; this is differential testing, and Chapter~4 does it for Forth with randomly generated programs. The second replays the recorded history in a fresh world and checks that the observable agrees, which tests the claim that nothing the language needed was kept outside the ledger.
+
+\section{Adequacy Is Relative to the Observation}
+
+An adequacy claim has no content until the observation is named. Two programs that produce the same stack are indistinguishable by the stack projection and distinguishable by the provenance projection, which reads, for each stack position, the operations that produced it. The first projection is the right one for deciding whether a compiler preserved arithmetic. The second is the right one for explaining a result, and it is available only because the reconstruction kept dependencies. The distinction appears again for module imports, where the value of an identifier does not say which module supplied it, and for package installs, where a version number does not say why a package is present.
+
+\section{The Cost of Keeping Everything}
+
+The price of the method is the length of the ledger. Chapter~12 gives a measured profile for one workload per prototype. The relevant general remark is that a prototype can be made cheaper by recording less, and that each saving has an identifiable cost in what can no longer be answered. A prototype that records only commitments cannot explain an intermediate value. A prototype that refuses unreachable spheres can answer questions about what is currently reachable and still answer questions about what once existed. The choice is part of the design and should be made explicitly.
+
+\section{Tests as Part of the Text}
+
+Every prototype ships with a test suite, and the tests are part of the specification. A test that asserts a refusal reason, for example that the second \texttt{ls} in a shell session performs no probes because the first result was hashed, states a semantic fact that prose could leave vague. The suites for the prototypes in this book total seventy-six tests, including exhaustive enumeration for the register, randomized differential testing for Forth, and a composition test that runs five languages in one ledger.
+
+\paragraph{Exercise 2.1.} Choose a small language not treated here, such as a Brainfuck variant, and carry out the five decisions on paper before writing code. For each observable, state the projection and the boundary.
+
+\paragraph{Exercise 2.2.} Give two source programs of a language of your choice that agree on every observable of one projection and disagree on another, and say what the second projection must read.

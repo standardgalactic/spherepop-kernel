@@ -1,0 +1,73 @@
+\part{Composition}
+
+\chapter{Composing Languages in One Ledger}
+
+\section{The Claim}
+
+Each prototype of Part II was tested alone, in a world of its own. A natural question is whether the prototypes are really instances of one construction or merely seven programs that share a kernel, and the test that separates the two is composition: place several of them in one world, interleave their operations, and ask whether each language still behaves as it does alone. If the prototypes use the kernel only through its four primitives and keep their state in tagged spheres, then by Proposition~\ref{prop:commute} operations of different languages name disjoint spheres and should commute. The claim to be tested is that a program of any one language produces the same observables, in a world that has been used by the others, as it produces in a fresh world.
+
+The composition test does this with five languages. It runs a Racket definition and call, a BASIC program, a bash session that ends with \texttt{type cd}, and a shift register edge in one world, interleaved with a Forth program that computes a factorial and prints it, and then compares the Forth stack, output, and provenance with those of the same Forth program run alone. It also compares the other languages' observables with their expected values and verifies the replay of the shared ledger. The test passes in the final form of the code, and the section that follows is the account of how it came to pass, because the failure that preceded it is a better argument for the method than the pass.
+
+\section{A Collision the Test Found}
+
+The first version of the prototypes used short, natural tag names. Forth output was a sphere with the tag \texttt{out}, Forth variables had the tag \texttt{var}, and BASIC input was tagged \texttt{in}. Each language was correct alone. In the shared world these tags were claimed by more than one language, so a rule written for one language collected spheres that another language had bound, and the composition test failed where every single-language test passed.
+
+The failure is a precise instance of the situation that the method is designed to expose, and the repair is a rule and not a patch. Every tag is namespaced by its language: \texttt{forth.out}, \texttt{forth.var}, \texttt{basic.var}, \texttt{basic.in}, \texttt{basic.out}, \texttt{lisp.out}, \texttt{shell.out}. The tags that are shared by design, such as \texttt{binding} for Lisp and Racket, which are one language in two layers, and the tag \texttt{probe} produced by the shared search function, are the exceptions that are documented as such. With the rule in place the composition test passes, and the rule is now part of the method of Chapter~2: the first decision, to place state in spheres, includes choosing a tag namespace that the language owns.
+
+The incident also shows the value of a design in which isolation is a property to be tested and not a convention to be trusted. A host-state implementation of the same languages would have had no collision to find, because each interpreter would have kept its own variables, and it would also have had no shared substrate, and so the question that the test answers would not have been askable.
+
+\section{Values Across Languages}
+
+The second composition test moves a value from one language to another through the ledger. A Racket program computes the sum of the integers from one to ten by a fold over a range, and the result is bound as a Forth cell with provenance naming its origin. A Forth program then duplicates and multiplies it, and the stack holds the square of the sum, three thousand and twenty-five. The point of the test is modest and the consequence is not. The two languages share no data representation other than a payload in a sphere, and the transfer is a single \texttt{Bind}, so the interface between languages is the interface of the kernel, and every one of the prototypes can in principle be coupled to every other by the same means.
+
+In the package chapter, the shell's command-not-found hook queries an index, the index synchronizes into a Racket loader, and the Racket loader finds modules whose DSLs are written in Racket itself. That is four layers connected only by spheres, and the composition tests of this chapter are the justification for treating that connection as sound.
+
+\section{What Composition Does Not Show}
+
+Composition shows that the prototypes do not interfere through the kernel. It does not show that the languages are correct, and it does not show that a program written in one can call a function written in another without a convention for what the values mean. The cell that carries a number from Racket to Forth is a number in both, and a list is not, because the Forth prototype has no list. A multi-language system would need agreement on a small set of data shapes, and the ledger would make the agreement checkable, since each crossing would be an event with a payload that a rule could inspect.
+
+\paragraph{Exercise 11.1.} Introduce a deliberate collision by tagging a Forth structure and a BASIC structure with the same name, and write the smallest test that detects it. Then write a test that detects a collision between two tags that differ only in case.
+
+\paragraph{Exercise 11.2.} Let a Racket program call a Forth word through a bridge that moves the arguments to Forth cells and the result back. Specify what the bridge refuses and why.
+
+\paragraph{Exercise 11.3.} Prove, from Proposition~\ref{prop:commute} and the disjointness of tag namespaces, that the stack observable of a Forth program is unchanged by interleaving any operations of the other prototypes. State the assumption about the shared search function that the proof needs.
+
+\chapter{Comparative Structural Analysis and Open Problems}
+
+\section{A Measured Profile}
+
+A ledger can be counted. For one workload per prototype, the table below gives the number of spheres bound, popped, and refused, the number of recorded collapses, the total number of events, and the number of spheres that remain live at the end. The workloads are the factorial of ten in Forth, eight clock edges of the four-bit register, the twelfth Fibonacci number in Lisp with its prelude loaded, the sum of the integers from one to one hundred in BASIC, four commands in bash, and the diamond installation in the package index.
+
+\begin{table}[h]
+\centering
+\input{out/profile.tex}
+\caption{Event counts and live spheres at the end of one workload per prototype.}
+\end{table}
+
+The table is a comparative measurement of what each language does with the primitives, and it reads cleanly once the vocabulary of Chapter~1 is applied. The Forth and BASIC workloads have many refusals because both languages consume and replace state continuously: a Forth operand is consumed when it is used, and a BASIC variable is superseded on every assignment. The BASIC row has a refusal for nearly every bind, one hundred and ninety-nine of two hundred and seven, and a single pop, because a loop that accumulates a sum supersedes the sum and the index on every pass and commits almost nothing. The shell row has fifteen refusals, one for each probe that missed. The index row has two, one for each backtracked decision. The Lisp and register rows have no refusals at all.
+
+A caution about reading the BASIC row is needed. Its refusals are supersessions, and a superseded value is not discarded without use: the old sum was consumed to produce the new one, and the successor depends on it. In the substructural vocabulary that is closer to a linear update than to weakening, and the large refusal count measures how often live state is replaced, not how much is thrown away. The same applies to the broader claim that mutation does not exist in the model. The ledger is immutable, but the live family $\Omega$ changes at every event, so the accurate statement is that mutation has been relocated from the history to the live set, and that what the model adds is a record of each replacement with its reason and its predecessor.
+
+\section{Weakening, Contraction, and Exchange}
+
+The structural vocabulary of Chapter~1 is a way of saying what each of these rows is doing. A refusal of a sphere that never contributed to a result is a weakening. The Forth \texttt{drop}, the refused branch of a conditional, the probes of a shell that missed, and the decisions of a solver that were abandoned are weakenings, and they are the natural places to look for what a language throws away. The Forth \texttt{dup} is a contraction in the sense that the new cell is coupled to the cell it copies, so one value is now used twice. Variable lookup in Lisp is a contraction as well, since a binding can be read any number of times and each read leaves the binding live. The \texttt{swap} and \texttt{rot} words are exchanges, and the prototype realizes them as the refusal of the consumed cells followed by binds of the produced cells in the permuted order.
+
+Only refusals that discard a value without its contributing to any result count as weakening in this audit, and the supersession refusals of BASIC and of Lisp assignment are excluded from that count. The audit is not decoration. A prototype that implements a language with no weakening at all, in which every value that enters the world is used, has a different substructural character than a language in which values may be discarded, and a faithful reconstruction should reproduce that character. The test that reveals the difference is simple: count the refusals whose reason is a discard and compare with the language's specification. A Forth reconstruction in which \texttt{drop} did not refuse a cell would leave it live and would fail the live-accounting proposition, and the check is therefore a consequence of the laws of the kernel and not an extra obligation.
+
+\section{The Cost of History}
+
+The last column of the table is the measure of a cost that Chapter~2 introduced. The Lisp row ends with nine hundred and eighty-five live spheres, because the prelude's definitions, the environments, and the closures stay live for as long as a binding refers to them, and the prototype has no garbage collection. The ledger itself is never collected, by design, since the ledger is the evidence. The two statements are different. The set of live spheres could be reduced by a collector that refuses spheres that no live sphere depends on, with the reason that they are unreachable, and that collector would itself be an application of the primitives and would leave a record. The ledger could be compressed by a policy that keeps only commitments, at the price that Chapter~2 states. The question for a long-running service is whether the ledger can be bounded, and the honest answer is that bounding it gives up part of what it was kept for. A checkpoint that records the digest of a prefix and then discards the prefix preserves the ability to verify that later events extend it, and loses the ability to replay or explain anything before the checkpoint. This is the same trade that event-sourced systems make with snapshots, and the prototypes here make no attempt to choose a point on it. The table suggests the order of magnitude of the difference. A short Lisp computation produces nearly two thousand events and a short Forth computation produces fewer than two hundred, and the ratio reflects that the Lisp prototype stores environments and closures as spheres and the Forth prototype stores a stack.
+
+\section{What Has and Has Not Been Shown}
+
+Three claims have been argued in the book and they should be separated. The first is that the four primitives are enough to implement the state of each of these languages, and the evidence is the prototypes themselves, which use only the kernel's interface. The second is that the prototypes are adequate at their observation boundaries, and the evidence is of two kinds: proofs for the register and for Forth, which are short because the prototypes were built to make them short, and differential tests against independent references for those two, exhaustive for the register and randomized for Forth. The third is that the models of the shells, BASIC, and the package index are faithful to the documented rules of the systems they represent. For these the evidence is the tests that assert specific documented behaviors, and no more than that. A statement about how a real shell or a real index behaves in every case is not supported by a prototype of this size, and where the book makes a modeling choice, such as exact name matching for a Windows executable invoked from WSL, it says so.
+
+\section{Open Problems}
+
+Several extensions would test the method more severely than the work here does. A hygienic macro expander would show whether the ledger's lineage is enough to implement renaming. A type system, even a simple one, would introduce a new kind of refusal, one made before execution on the basis of a static judgment. A language with first-class continuations would stress the claim that activation records are spheres, since a continuation may be resumed after the spheres it refers to have been popped. A concurrent language would require the kernel's treatment of independent events to account for interleavings. The rewriting systems of the combinatory and circle calculi that the earlier essays treat would be the natural next family of prototypes, since their central difficulty, duplication, has an explicit counterpart in the contraction of a shared sphere. Finally, the package index and search path could be extended with the one feature of real systems that the prototype omits for brevity, which is signed provenance of releases, and the ledger's hash chain suggests a design in which the provenance of an installed module is verified by replay.
+
+\paragraph{Exercise 12.1.} Add a mark-and-refuse garbage collector for the Lisp prototype that refuses unreachable binding and closure spheres with the reason \texttt{unreachable}. Rerun the profile and report how the live count changes. Decide whether the collector's own events are counted in the profile.
+
+\paragraph{Exercise 12.2.} Choose a language not in this book and predict the shape of its profile row before implementing it, giving the expected ratios of refusals to binds. Implement it, compare, and explain any difference in terms of weakening and contraction.
+
+\paragraph{Exercise 12.3.} State a precise sense in which the Forth word \texttt{dup} is a contraction and the Lisp variable read is a contraction, and show that the two differ in whether the copy is a new sphere or a new use of an existing one.

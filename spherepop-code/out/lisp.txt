@@ -1,0 +1,14 @@
+> (define (make-counter) (let ((n 0)) (lambda () (set! n (+ n 1)) n)))
+
+> (define c (make-counter))
+
+> (c)
+1
+> (c)
+2
+> (c)
+3
+> (map (lambda (x) (* x x)) '(1 2 3 4))
+(1 4 9 16)
+lineage of n in the captured frame: [0, 1, 2, 3]
+(loop 3000 0) = 3000 ; live call spheres afterward: 0

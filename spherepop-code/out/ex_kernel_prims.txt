@@ -1,0 +1,17 @@
+# the four primitives
+def bind(self, tag, key=None, payload=None, deps=()):
+    sid = len(self.spheres)
+    self._commit(("bind", sid, tag, key, payload, tuple(deps)))
+    return sid
+
+def pop(self, sid):
+    self._commit(("pop", sid))
+    return self.spheres[sid].payload
+
+def refuse(self, sid, reason):
+    self._commit(("refuse", sid, reason))
+
+def collapse(self, rule, name=None):
+    value = rule(self.view)
+    self._commit(("collapse", name or getattr(rule, "__name__", "rule"), digest(value)))
+    return value

@@ -1,0 +1,20 @@
+def sync_racket(self, rkt):
+    """Feed installed packages' modules into a Racket source index; retract removed ones."""
+    v, w = self.w.view, self.w
+    want = {}
+    for name, ver in self.installed().items():
+        for m, src in self.release(name, ver)[2]:
+            want[m] = src
+    for m, src in want.items():
+        cur = rkt.w.view.last_key("source", m)
+        if cur is None or rkt.w.view.payload(cur) != src:
+            rkt.add_source(m, src)
+        if rkt.w.view.last_key("owned", m) is None:
+            rkt.w.bind("owned", m)
+    for i in rkt.w.view.live("owned"):
+        m = rkt.w.view.sphere(i).key
+        if m not in want:
+            s = rkt.w.view.last_key("source", m)
+            if s is not None:
+                rkt.w.refuse(s, "package-removed")
+            rkt.w.refuse(i, "package-removed")
