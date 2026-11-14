@@ -1,0 +1,11 @@
+import SpherepopProof.Term
+import SpherepopProof.Config
+import SpherepopProof.Par
+import SpherepopProof.Step
+import SpherepopProof.Spine
+import SpherepopProof.Settled
+import SpherepopProof.Star
+import SpherepopProof.ParStep
+import SpherepopProof.Dev
+import SpherepopProof.Takahashi
+import SpherepopProof.Confluence
