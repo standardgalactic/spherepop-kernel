@@ -1,0 +1,244 @@
+{
+ "chain": "d_i = SHA-256(d_{i-1} hex || 0x0A || canonical(e_i)); d_0 = 'root'",
+ "digests": [
+  "c707dd1034eb94e9ca324f71a1e1ae3be1a0a936fc26f2c61695dde631b78d5b",
+  "351c1718bc4db5bd09b9bd14b94fbfbfb7c89929811405d10ed9c41c948c72e9",
+  "8c7168460ebfff3b9e1e6a91e57b54d73298a68c604a0928dd4f69ec87b870d7",
+  "49799be056ad590b4fa3633f7cfc955e99c70ced40c674b3bc3fcada3d5b5d18"
+ ],
+ "encoding": "utf-8 JSON, sorted keys, separators (',',':'), ASCII escapes",
+ "events": [
+  {
+   "authorization": "trust-root",
+   "evidence": [],
+   "kind": "GENESIS",
+   "parent": "root",
+   "payload": {
+    "budget": {
+     "maintenance": 100
+    },
+    "capabilities": {
+     "maintainer-A": [
+      "COLLAPSE",
+      "AMEND"
+     ],
+     "proposer-M": [
+      "PROPOSE",
+      "VERIFY_RUN"
+     ]
+    },
+    "invariants": [
+     "grammar-preservation"
+    ],
+    "obligations": [
+     {
+      "artifact": "libA",
+      "id": "o1",
+      "upper": 15
+     },
+     {
+      "artifact": "libB",
+      "id": "o2",
+      "upper": 15
+     },
+     {
+      "artifact": "core",
+      "id": "o3",
+      "upper": 40
+     }
+    ],
+    "profile": "sp-dev-0.1",
+    "specification": "parser@1.0"
+   }
+  },
+  {
+   "authorization": {
+    "expected_parent": "c707dd1034eb94e9ca324f71a1e1ae3be1a0a936fc26f2c61695dde631b78d5b",
+    "policy": "merge-policy@2",
+    "principal": "maintainer-A"
+   },
+   "evidence": [
+    "23d01b954801a03134f698cfb260eef4f17afd6d268c29c70e969489cf75356a"
+   ],
+   "kind": "COLLAPSE",
+   "parent": "c707dd1034eb94e9ca324f71a1e1ae3be1a0a936fc26f2c61695dde631b78d5b",
+   "payload": {
+    "artifact": "659cf65cb9af020ddde873b8807aff19d84c07c5114c3fbaaf69a92859780258",
+    "maintenance_delta": {
+     "added": [],
+     "removed": []
+    },
+    "touches": [
+     "parser/lexer-table"
+    ]
+   }
+  },
+  {
+   "authorization": {
+    "expected_parent": "351c1718bc4db5bd09b9bd14b94fbfbfb7c89929811405d10ed9c41c948c72e9",
+    "policy": "merge-policy@2",
+    "principal": "maintainer-A"
+   },
+   "evidence": [
+    "18ed42459b756265cd166854284b46ac3d5db245ab0be1ce549c51bd6005062d"
+   ],
+   "kind": "COLLAPSE",
+   "parent": "351c1718bc4db5bd09b9bd14b94fbfbfb7c89929811405d10ed9c41c948c72e9",
+   "payload": {
+    "artifact": "98e24356c56ade3125adce974297e0cd88460ab41ab798393441b816437d9f0f",
+    "maintenance_delta": {
+     "added": [],
+     "burden_after": 40,
+     "burden_before": 70,
+     "removed": [
+      "o1",
+      "o2"
+     ]
+    },
+    "touches": [
+     "parser/tokenizer",
+     "libA",
+     "libB"
+    ]
+   }
+  },
+  {
+   "authorization": {
+    "expected_parent": "8c7168460ebfff3b9e1e6a91e57b54d73298a68c604a0928dd4f69ec87b870d7",
+    "policy": "merge-policy@2",
+    "principal": "maintainer-A"
+   },
+   "evidence": [
+    "9c109e8bba3ea607d19610acb7cdd1a3ef8e80acee2d7977aa281b8ab0d1484c"
+   ],
+   "kind": "REPAIR",
+   "parent": "8c7168460ebfff3b9e1e6a91e57b54d73298a68c604a0928dd4f69ec87b870d7",
+   "payload": {
+    "artifact": "37b6a2f52016b1f68caa53129e165a63eeadb8e337e5599268bfbb50889677ac",
+    "cause": "escaped-defect:unterminated-comment",
+    "repairs": "8c7168460ebfff3b9e1e6a91e57b54d73298a68c604a0928dd4f69ec87b870d7"
+   }
+  }
+ ],
+ "evidence": {
+  "w1": {
+   "F": [
+    "parser/tokenizer",
+    "parser/lexer-table",
+    "libA",
+    "libB"
+   ],
+   "eta": "env:toolchain-2026.11",
+   "h": "c707dd1034eb94e9ca324f71a1e1ae3be1a0a936fc26f2c61695dde631b78d5b",
+   "r": {
+    "certificate": "input:\"/* x\" accepted by tau1, rejected by grammar",
+    "result": "fail"
+   },
+   "sigma": "parser@1.0",
+   "t": "d1fb1a6b3a1f514237b94787a5369f864038ad6caa6e57561a3b50247c6caf7f",
+   "v": "fd2267d48ba910fe42fb378727e6c1a3188ac03d14073be32c052577d5f393cf"
+  },
+  "w2": {
+   "F": [
+    "parser/tokenizer",
+    "parser/lexer-table",
+    "libA",
+    "libB"
+   ],
+   "eta": "env:toolchain-2026.11",
+   "h": "c707dd1034eb94e9ca324f71a1e1ae3be1a0a936fc26f2c61695dde631b78d5b",
+   "r": {
+    "certificate": "corpus:parser-corpus@7 all accepted/rejected as specified",
+    "result": "pass"
+   },
+   "sigma": "parser@1.0",
+   "t": "6ee6064ff94845211c6ea9c9abd0bfa60d9b147141fb331e024ce6421098e4e8",
+   "v": "fd2267d48ba910fe42fb378727e6c1a3188ac03d14073be32c052577d5f393cf"
+  },
+  "w3": {
+   "F": [
+    "parser/tokenizer",
+    "parser/lexer-table",
+    "libA",
+    "libB"
+   ],
+   "eta": "env:toolchain-2026.11",
+   "h": "351c1718bc4db5bd09b9bd14b94fbfbfb7c89929811405d10ed9c41c948c72e9",
+   "r": {
+    "certificate": "corpus:parser-corpus@7",
+    "result": "pass"
+   },
+   "sigma": "parser@1.0",
+   "t": "98e24356c56ade3125adce974297e0cd88460ab41ab798393441b816437d9f0f",
+   "v": "fd2267d48ba910fe42fb378727e6c1a3188ac03d14073be32c052577d5f393cf"
+  },
+  "w4": {
+   "F": [
+    "parser/tokenizer"
+   ],
+   "eta": "env:toolchain-2026.11",
+   "h": "8c7168460ebfff3b9e1e6a91e57b54d73298a68c604a0928dd4f69ec87b870d7",
+   "r": {
+    "certificate": "corpus:parser-corpus@8",
+    "result": "pass"
+   },
+   "sigma": "parser@1.0",
+   "t": "37b6a2f52016b1f68caa53129e165a63eeadb8e337e5599268bfbb50889677ac",
+   "v": "fd2267d48ba910fe42fb378727e6c1a3188ac03d14073be32c052577d5f393cf"
+  },
+  "wx": {
+   "F": [
+    "parser/lexer-table"
+   ],
+   "eta": "env:toolchain-2026.11",
+   "h": "c707dd1034eb94e9ca324f71a1e1ae3be1a0a936fc26f2c61695dde631b78d5b",
+   "r": {
+    "certificate": "corpus:parser-corpus@7",
+    "result": "pass"
+   },
+   "sigma": "parser@1.0",
+   "t": "659cf65cb9af020ddde873b8807aff19d84c07c5114c3fbaaf69a92859780258",
+   "v": "fd2267d48ba910fe42fb378727e6c1a3188ac03d14073be32c052577d5f393cf"
+  }
+ },
+ "evidence_digests": {
+  "w1": "b709a63cfd1580434d73bb0000d902669cbd498a1a851ae752e13f556a2992b4",
+  "w2": "4abfdf5220f8b48bb2988095efab9e849996643f09f4c0a9654320fee8f8f1b7",
+  "w3": "18ed42459b756265cd166854284b46ac3d5db245ab0be1ce549c51bd6005062d",
+  "w4": "9c109e8bba3ea607d19610acb7cdd1a3ef8e80acee2d7977aa281b8ab0d1484c",
+  "wx": "23d01b954801a03134f698cfb260eef4f17afd6d268c29c70e969489cf75356a"
+ },
+ "note": "Artifact digests are SHA-256 of placeholder descriptions; they stand in for artifact content.",
+ "profile": "sp-dev-0.1",
+ "receipts": {
+  "rho1": {
+   "disposition": "CONTRADICTED",
+   "evidence": [
+    "b709a63cfd1580434d73bb0000d902669cbd498a1a851ae752e13f556a2992b4"
+   ],
+   "head": "c707dd1034eb94e9ca324f71a1e1ae3be1a0a936fc26f2c61695dde631b78d5b",
+   "kappa": "d824bea6d19880f5f58abaa8338672f86146d4609b4b8466a6ffdd6f0260217f",
+   "tau": "d1fb1a6b3a1f514237b94787a5369f864038ad6caa6e57561a3b50247c6caf7f"
+  },
+  "rho2": {
+   "disposition": "STALE",
+   "evidence": [
+    "4abfdf5220f8b48bb2988095efab9e849996643f09f4c0a9654320fee8f8f1b7"
+   ],
+   "head": "351c1718bc4db5bd09b9bd14b94fbfbfb7c89929811405d10ed9c41c948c72e9",
+   "intersecting_event": "351c1718bc4db5bd09b9bd14b94fbfbfb7c89929811405d10ed9c41c948c72e9",
+   "kappa": "87bb510b58bf2d1870f72705654ae1e6d13c8b6e3aaa17ac8e40ad00818fe95e",
+   "tau": "6ee6064ff94845211c6ea9c9abd0bfa60d9b147141fb331e024ce6421098e4e8"
+  },
+  "rho3": {
+   "actual_parent": "351c1718bc4db5bd09b9bd14b94fbfbfb7c89929811405d10ed9c41c948c72e9",
+   "committed_event": "8c7168460ebfff3b9e1e6a91e57b54d73298a68c604a0928dd4f69ec87b870d7",
+   "disposition": "ACCEPTABLE",
+   "evidence": [
+    "18ed42459b756265cd166854284b46ac3d5db245ab0be1ce549c51bd6005062d"
+   ],
+   "expected_parent": "351c1718bc4db5bd09b9bd14b94fbfbfb7c89929811405d10ed9c41c948c72e9",
+   "tau": "98e24356c56ade3125adce974297e0cd88460ab41ab798393441b816437d9f0f"
+  }
+ }
+}

@@ -1,0 +1,143 @@
+{
+ "expected": {
+  "commit": false,
+  "disposition": "CONTRADICTED",
+  "head_unchanged": true,
+  "violated_obligation": "unique-exports"
+ },
+ "genesis": {
+  "authorization": "trust-root",
+  "evidence": [],
+  "kind": "GENESIS",
+  "parent": "root",
+  "payload": {
+   "boundary_obligations": [
+    "unique-exports"
+   ],
+   "capabilities": {
+    "maintainer-A": [
+     "COLLAPSE"
+    ],
+    "proposer-M": [
+     "PROPOSE",
+     "VERIFY_RUN"
+    ]
+   },
+   "initial_state": {
+    "A": [
+     "lex"
+    ],
+    "B": [
+     "emit"
+    ]
+   },
+   "invariants": [
+    "unique-exports"
+   ],
+   "profile": "sp-dev-0.1",
+   "specification": "exports@1.0"
+  }
+ },
+ "head": "1cace3f1547953c963f4e1072261f49527ad0c8862d7326c9d2e435648d32653",
+ "parent": {
+  "boundary_evidence": {
+   "F": [
+    "A",
+    "B"
+   ],
+   "h": "1cace3f1547953c963f4e1072261f49527ad0c8862d7326c9d2e435648d32653",
+   "procedure": "boundary-unique-exports@1",
+   "r": {
+    "certificate": {
+     "name": "parse",
+     "units": [
+      "A",
+      "B"
+     ]
+    },
+    "result": "fail",
+    "violated_obligation": "unique-exports"
+   },
+   "sigma": "exports@1.0",
+   "t": "ed3792c14345189197923996999b4db0ac836fefc12ed49311bdfca78f2f164e"
+  },
+  "composed": {
+   "compose": [
+    {
+     "add_export": "parse",
+     "unit": "A"
+    },
+    {
+     "add_export": "parse",
+     "unit": "B"
+    }
+   ]
+  },
+  "receipt": {
+   "findings": [
+    {
+     "certificate": {
+      "name": "parse",
+      "units": [
+       "A",
+       "B"
+      ]
+     },
+     "obligation": "unique-exports",
+     "type": "CONTRADICTED"
+    }
+   ],
+   "head_after": "1cace3f1547953c963f4e1072261f49527ad0c8862d7326c9d2e435648d32653",
+   "head_before": "1cace3f1547953c963f4e1072261f49527ad0c8862d7326c9d2e435648d32653",
+   "local_certificates_preserved": [
+    "60e99cd20f439fa02ec79ced3933dd7f075f84b6adc1fff39ef72e5197bfa3da",
+    "972111e49690a89937c6ffc01f712129cc5e3bca7f87482cf668cd322992e60a"
+   ],
+   "operation": "REFUSE",
+   "primary": "CONTRADICTED",
+   "tau": "ed3792c14345189197923996999b4db0ac836fefc12ed49311bdfca78f2f164e"
+  }
+ },
+ "profile": "sp-dev-0.1",
+ "purpose": "Noncompositionality of local certification: two subordinate spheres pass locally, composition violates a parent boundary obligation.",
+ "subordinate": {
+  "s1": {
+   "disposition": "ACCEPTABLE_LOCALLY",
+   "evidence": {
+    "F": [
+     "A"
+    ],
+    "h": "1cace3f1547953c963f4e1072261f49527ad0c8862d7326c9d2e435648d32653",
+    "procedure": "local-unique-exports@1",
+    "r": {
+     "result": "pass"
+    },
+    "sigma": "exports@1.0",
+    "t": "5d1d754a04d899bf2e828c2491a85440ea7ee7995224a86c8fdc466ec7d79c2f"
+   },
+   "tau": {
+    "add_export": "parse",
+    "unit": "A"
+   }
+  },
+  "s2": {
+   "disposition": "ACCEPTABLE_LOCALLY",
+   "evidence": {
+    "F": [
+     "B"
+    ],
+    "h": "1cace3f1547953c963f4e1072261f49527ad0c8862d7326c9d2e435648d32653",
+    "procedure": "local-unique-exports@1",
+    "r": {
+     "result": "pass"
+    },
+    "sigma": "exports@1.0",
+    "t": "e6d0b190135730e383cfad88822ae2755cd0922cb939e03a9e8c03868bcabdaf"
+   },
+   "tau": {
+    "add_export": "parse",
+    "unit": "B"
+   }
+  }
+ }
+}

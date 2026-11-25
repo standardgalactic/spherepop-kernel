@@ -1,0 +1,166 @@
+{
+ "expected_transcript": [
+  "{\"burden\":70,\"head\":\"c707dd1034eb94e9ca324f71a1e1ae3be1a0a936fc26f2c61695dde631b78d5b\",\"length\":1,\"op\":\"REFUSE\",\"primary\":\"UNESTABLISHED\",\"types\":[\"UNESTABLISHED\"]}",
+  "{\"burden\":70,\"head\":\"cc58c06afb4f418c009e54256098b3f809e3c17b023056bf1c93f8e03d386fb8\",\"length\":2,\"op\":\"COLLAPSE\",\"primary\":\"ACCEPTABLE\",\"types\":[\"ACCEPTABLE\"]}",
+  "{\"burden\":70,\"head\":\"e1858174777f522a68bef8833b4d323a6e04b4670e3c0ca36aa300967082b483\",\"length\":3,\"op\":\"COLLAPSE\",\"primary\":\"ACCEPTABLE\",\"types\":[\"ACCEPTABLE\"]}"
+ ],
+ "genesis": {
+  "authorization": "trust-root",
+  "evidence": [],
+  "kind": "GENESIS",
+  "parent": "root",
+  "payload": {
+   "budget": {
+    "maintenance": 100
+   },
+   "capabilities": {
+    "maintainer-A": [
+     "COLLAPSE",
+     "AMEND"
+    ],
+    "proposer-M": [
+     "PROPOSE",
+     "VERIFY_RUN"
+    ]
+   },
+   "invariants": [
+    "grammar-preservation"
+   ],
+   "obligations": [
+    {
+     "artifact": "libA",
+     "id": "o1",
+     "upper": 15
+    },
+    {
+     "artifact": "libB",
+     "id": "o2",
+     "upper": 15
+    },
+    {
+     "artifact": "core",
+     "id": "o3",
+     "upper": 40
+    }
+   ],
+   "profile": "sp-dev-0.1",
+   "specification": "parser@1.0"
+  }
+ },
+ "purpose": "A repair event must name an existing event of H; otherwise it is refused as unestablished and H is unchanged.",
+ "steps": [
+  {
+   "event": {
+    "authorization": {
+     "principal": "maintainer-A"
+    },
+    "evidence": [
+     "448caab681d8593caff0cdaff1941a1dfb7b57d6bd0966dcbc1eafaa5a6976b3"
+    ],
+    "kind": "REPAIR",
+    "parent": "c707dd1034eb94e9ca324f71a1e1ae3be1a0a936fc26f2c61695dde631b78d5b",
+    "payload": {
+     "artifact": "ad39d0505500d9609145591eebe14660de93ebd76655838405c2ea06447fe8ee",
+     "maintenance_delta": {
+      "added": [],
+      "removed": []
+     },
+     "repairs": "b68abfe97a7b49b64628b52f3241c87f71077fd026d308178c485d845560b44f",
+     "touches": [
+      "parser/tokenizer"
+     ]
+    }
+   },
+   "evidence": [
+    {
+     "F": [
+      "parser/tokenizer"
+     ],
+     "eta": "e",
+     "h": "c707dd1034eb94e9ca324f71a1e1ae3be1a0a936fc26f2c61695dde631b78d5b",
+     "r": {
+      "result": "pass"
+     },
+     "sigma": "parser@1.0",
+     "t": "ad39d0505500d9609145591eebe14660de93ebd76655838405c2ea06447fe8ee",
+     "v": "v"
+    }
+   ]
+  },
+  {
+   "event": {
+    "authorization": {
+     "principal": "maintainer-A"
+    },
+    "evidence": [
+     "85f9398100ac4f736da2e417ad7aac171c24f5236ef56482751ad56be0d57e0d"
+    ],
+    "kind": "COLLAPSE",
+    "parent": "c707dd1034eb94e9ca324f71a1e1ae3be1a0a936fc26f2c61695dde631b78d5b",
+    "payload": {
+     "artifact": "5a9e54d60f2678bf9d008ab2df345fefa421dcd0ed9c2b0a6441ab59f459c4a5",
+     "maintenance_delta": {
+      "added": [],
+      "removed": []
+     },
+     "touches": [
+      "parser/tokenizer"
+     ]
+    }
+   },
+   "evidence": [
+    {
+     "F": [
+      "parser/tokenizer"
+     ],
+     "eta": "e",
+     "h": "c707dd1034eb94e9ca324f71a1e1ae3be1a0a936fc26f2c61695dde631b78d5b",
+     "r": {
+      "result": "pass"
+     },
+     "sigma": "parser@1.0",
+     "t": "5a9e54d60f2678bf9d008ab2df345fefa421dcd0ed9c2b0a6441ab59f459c4a5",
+     "v": "v"
+    }
+   ]
+  },
+  {
+   "event": {
+    "authorization": {
+     "principal": "maintainer-A"
+    },
+    "evidence": [
+     "f807ea3c3c01562240fc9ce4445ece7d5046628b88a3de634321720e883e984d"
+    ],
+    "kind": "REPAIR",
+    "parent": "cc58c06afb4f418c009e54256098b3f809e3c17b023056bf1c93f8e03d386fb8",
+    "payload": {
+     "artifact": "c49833086292314f0a67dca0743dadfe33c9f7cfb0998ab8578e39817ada9683",
+     "maintenance_delta": {
+      "added": [],
+      "removed": []
+     },
+     "repairs": "cc58c06afb4f418c009e54256098b3f809e3c17b023056bf1c93f8e03d386fb8",
+     "touches": [
+      "parser/tokenizer"
+     ]
+    }
+   },
+   "evidence": [
+    {
+     "F": [
+      "parser/tokenizer"
+     ],
+     "eta": "e",
+     "h": "cc58c06afb4f418c009e54256098b3f809e3c17b023056bf1c93f8e03d386fb8",
+     "r": {
+      "result": "pass"
+     },
+     "sigma": "parser@1.0",
+     "t": "c49833086292314f0a67dca0743dadfe33c9f7cfb0998ab8578e39817ada9683",
+     "v": "v"
+    }
+   ]
+  }
+ ]
+}
